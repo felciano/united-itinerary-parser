@@ -1,0 +1,60 @@
+- description: "3-flight itinerary with missing duration and aircraft for one leg"
+  input_text_block: |
+	## Multi-City (1 TRAVELER)
+
+	Revise this trip
+
+	Flight selection list
+
+	Flight 1 of 3
+
+	### London LHR to San Francisco SFO
+
+	Sep 3Tuesday, September 38:00 AM to 11:15 AMNonstop
+
+	**Travelers:** 1
+
+	Flight Number: UA 123
+
+	Hide details
+
+	Flight 2 of 3
+
+	### San Francisco SFO to Chicago ORD
+
+	Sep 6Friday, September 610:00 AM to 4:00 PMNonstop
+
+	Duration: 4h 0m
+
+	**Travelers:** 1
+
+	Flight Number: UA 456
+
+	Aircraft type: Boeing 737-800
+
+	Hide details
+
+	Flight 3 of 3
+
+	### Chicago ORD to London LHR
+
+	Sep 10Tuesday, September 109:45 PM to 11:10 AMNonstop
+
+	![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
+
+	Duration: 7h 25m
+
+	**Travelers:** 1
+
+	Flight Number: UA 789
+
+	Aircraft type: Boeing 777-300ER
+
+	## Total due
+
+	$2,740.00
+  expected_summary: |
+	- LHR > SFO UA 123: dep LHR Tue Sep 3, 8:00 am, arr SFO 11:15 am (nonstop, dur/aircraft: ???).
+	- SFO > ORD UA 456: dep SFO Fri Sep 6, 10:00 am, arr ORD 4:00 pm (nonstop, 4h0m, Boeing 737-800).
+	- ORD > LHR UA 789: dep ORD Tue Sep 10, 9:45 pm, arr LHR Wed 11:10 am (nonstop, 7h25m, Boeing 777-300ER).
+	Cost: $2,740.00

@@ -1,0 +1,58 @@
+- description: "Roundtrip itinerary with nonstop flights and date change on return"
+  input_text_block: |
+	## Roundtrip (1 TRAVELER)
+
+	Revise this trip
+
+	Flight selection list
+
+	Flight 1 of 2
+
+	### London LHR to San Francisco SFO
+
+	Apr 11Friday, April 114:15 PM to 7:20 PMNonstop
+
+	Duration: 11h 5m11 hours5 minutes
+
+	**Travelers:** 1
+
+	ramon felciano
+
+	Flight Number: UA 939
+
+	Aircraft type: Boeing 777-200
+
+	Emissions per seat type: Carbon emissions estimate:2,172 kg CO22,172 kilograms.
+
+	Hide details
+
+	Flight 2 of 2
+
+	### San Francisco SFO to London LHR
+
+	Apr 16Wednesday, April 1612:55 PM to 7:25 AMNonstop
+
+	![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
+
+	Duration: 10h 30m10 hours30 minutes
+
+	**Travelers:** 1
+
+	ramon felciano
+
+	Flight Number: UA 901
+
+	Aircraft type: Boeing 777-200
+
+	Emissions per seat type: Carbon emissions estimate:1,840 kg CO21,840 kilograms.
+
+	Hide details
+
+	## Total due
+
+	$1,399.01  
+	+ 70 PlusPoints
+  expected_summary: |
+	- LHR > SFO UA 939: dep LHR Fri Apr 11, 4:15 pm, arr SFO 7:20 pm (nonstop, 11h5m, Boeing 777-200).
+	- SFO > LHR UA 901: dep SFO Wed Apr 16, 12:55 pm, arr LHR Thu 7:25 am (nonstop, 10h30m, Boeing 777-200).
+	Cost: $1,399.01 + 70 PlusPoints

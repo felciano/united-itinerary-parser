@@ -1,0 +1,9 @@
+[project]
+name = "united-itinerary-parser"
+version = "0.1.0"
+description = "Parse United Airlines itineraries into concise summaries"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.scripts]
+united-itinerary = "summarize_united_itinerary:main"

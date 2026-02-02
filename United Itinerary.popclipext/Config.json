@@ -1,0 +1,12 @@
+{
+  "name": "United Itinerary",
+  "icon": "✈️",
+  "actions": [
+    {
+      "title": "Parse United Itinerary",
+      "shell script file": "parse.py",
+      "after": "copy-result",
+      "requirements": []
+    }
+  ]
+}
