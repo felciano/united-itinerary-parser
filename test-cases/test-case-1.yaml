@@ -1,95 +1,95 @@
 - description: "Multi-city itinerary with 3 nonstop flights, date change, full pricing info"
   input_text_block: |
-	## Multi-City (1 TRAVELER)
+    ## Multi-City (1 TRAVELER)
 
-	Revise this trip
+    Revise this trip
 
-	Flight selection list
+    Flight selection list
 
-	Flight 1 of 3
+    Flight 1 of 3
 
-	### London LHR to San Francisco SFO
+    ### London LHR to San Francisco SFO
 
-	Aug 21Thursday, August 2112:20 PM to 3:20 PMNonstop
+    Aug 21Thursday, August 2112:20 PM to 3:20 PMNonstop
 
-	Duration: 11h11 hours
+    Duration: 11h11 hours
 
-	**Travelers:** 1
+    **Travelers:** 1
 
-	Flight Number: UA 949
+    Flight Number: UA 949
 
-	Aircraft type: Boeing 777-200ER
+    Aircraft type: Boeing 777-200ER
 
-	Emissions per seat type: Carbon emissions estimate:2,156 kg CO22,156 kilograms.
+    Emissions per seat type: Carbon emissions estimate:2,156 kg CO22,156 kilograms.
 
-	Hide details
+    Hide details
 
-	Flight 2 of 3
+    Flight 2 of 3
 
-	### San Francisco SFO to Newark EWR
+    ### San Francisco SFO to Newark EWR
 
-	Aug 26Tuesday, August 269:20 AM to 6:00 PMNonstop
+    Aug 26Tuesday, August 269:20 AM to 6:00 PMNonstop
 
-	Duration: 5h 40m5 hours40 minutes
+    Duration: 5h 40m5 hours40 minutes
 
-	**Travelers:** 1
+    **Travelers:** 1
 
-	Flight Number: UA 2259
+    Flight Number: UA 2259
 
-	Aircraft type: Boeing 787-9 Dreamliner
+    Aircraft type: Boeing 787-9 Dreamliner
 
-	Emissions per seat type: Carbon emissions estimate:255 kg CO2255 kilograms.
+    Emissions per seat type: Carbon emissions estimate:255 kg CO2255 kilograms.
 
-	Hide details
+    Hide details
 
-	Flight 3 of 3
+    Flight 3 of 3
 
-	### Newark EWR to London LHR
+    ### Newark EWR to London LHR
 
-	Aug 28Thursday, August 286:15 PM to 6:45 AMNonstop
+    Aug 28Thursday, August 286:15 PM to 6:45 AMNonstop
 
-	![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
+    ![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
 
-	Duration: 7h 30m7 hours30 minutes
+    Duration: 7h 30m7 hours30 minutes
 
-	**Travelers:** 1
+    **Travelers:** 1
 
-	Flight Number: UA 16
+    Flight Number: UA 16
 
-	Aircraft type: Boeing 767-300
+    Aircraft type: Boeing 767-300
 
-	Emissions per seat type: Carbon emissions estimate:387 kg CO2387 kilograms.
+    Emissions per seat type: Carbon emissions estimate:387 kg CO2387 kilograms.
 
-	Hide details
+    Hide details
 
-	## Price breakdown
+    ## Price breakdown
 
-	Fare
+    Fare
 
-	$1,724.80
+    $1,724.80
 
-	### 1 adult 18+
+    ### 1 adult 18+
 
-	$1,724.80/person
+    $1,724.80/person
 
-	Service fees
+    Service fees
 
-	$975.00
+    $975.00
 
-	Upgrades
+    Upgrades
 
-	55,000 miles
+    55,000 miles
 
-	Taxes and fees
+    Taxes and fees
 
-	$485.43
+    $485.43
 
-	## Total due
+    ## Total due
 
-	$3,185.23  
-	+ 55,000 miles
+    $3,185.23  
+    + 55,000 miles
   expected_summary: |
-	- LHR > SFO UA 949: dep LHR Thu Aug 21, 12:20 pm, arr SFO 3:20 pm (nonstop, 11h, Boeing 777-200ER).
-	- SFO > EWR UA 2259: dep SFO Tue Aug 26, 9:20 am, arr EWR 6:00 pm (nonstop, 5h40m, Boeing 787-9 Dreamliner).
-	- EWR > LHR UA 16: dep EWR Thu Aug 28, 6:15 pm, arr LHR Fri 6:45 am (nonstop, 7h30m, Boeing 767-300).
-	Cost: $3,185.23 + 55000 miles
+    - Itinerary: $3,185.23 + 55,000 miles
+      - LHR > SFO UA 949: dep LHR Thu Aug 21, 12:20 pm, arr SFO 3:20 pm (nonstop, 11h, Boeing 777-200ER).
+      - SFO > EWR UA 2259: dep SFO Tue Aug 26, 9:20 am, arr EWR 6:00 pm (nonstop, 5h40m, Boeing 787-9 Dreamliner).
+      - EWR > LHR UA 16: dep EWR Thu Aug 28, 6:15 pm, arr LHR Fri 6:45 am (nonstop, 7h30m, Boeing 767-300).

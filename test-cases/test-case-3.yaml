@@ -1,71 +1,71 @@
 - description: "Multi-city trip with 3 flights, all nonstop, missing duration on one leg"
   input_text_block: |
-	## Multi-City (1 TRAVELER)
+    ## Multi-City (1 TRAVELER)
 
-	Revise this trip
+    Revise this trip
 
-	Flight selection list
+    Flight selection list
 
-	Flight 1 of 3
+    Flight 1 of 3
 
-	### London LHR to San Francisco SFO
+    ### London LHR to San Francisco SFO
 
-	Aug 22Friday, August 224:15 PM to 7:10 PMNonstop
+    Aug 22Friday, August 224:15 PM to 7:10 PMNonstop
 
-	Duration: 10h 55m10 hours55 minutes
+    Duration: 10h 55m10 hours55 minutes
 
-	Travelers: 1
+    Travelers: 1
 
-	Flight Number: UA 939
+    Flight Number: UA 939
 
-	Aircraft type: Boeing 787-9 Dreamliner
+    Aircraft type: Boeing 787-9 Dreamliner
 
-	Emissions per seat type: Carbon emissions estimate:557 kg CO2557 kilograms.
+    Emissions per seat type: Carbon emissions estimate:557 kg CO2557 kilograms.
 
-	Hide details
+    Hide details
 
-	Flight 2 of 3
+    Flight 2 of 3
 
-	### San Francisco SFO to Newark EWR
+    ### San Francisco SFO to Newark EWR
 
-	Aug 26Tuesday, August 269:20 AM to 6:00 PMNonstop
+    Aug 26Tuesday, August 269:20 AM to 6:00 PMNonstop
 
-	Travelers: 1
+    Travelers: 1
 
-	Flight Number: UA 2259
+    Flight Number: UA 2259
 
-	Aircraft type: Boeing 787-9 Dreamliner
+    Aircraft type: Boeing 787-9 Dreamliner
 
-	Emissions per seat type: Carbon emissions estimate:255 kg CO2255 kilograms.
+    Emissions per seat type: Carbon emissions estimate:255 kg CO2255 kilograms.
 
-	Hide details
+    Hide details
 
-	Flight 3 of 3
+    Flight 3 of 3
 
-	### Newark EWR to London LHR
+    ### Newark EWR to London LHR
 
-	Aug 28Thursday, August 286:45 PM to 7:15 AMNonstop
+    Aug 28Thursday, August 286:45 PM to 7:15 AMNonstop
 
-	![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
+    ![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
 
-	Duration: 7h 30m7 hours30 minutes
+    Duration: 7h 30m7 hours30 minutes
 
-	Travelers: 1
+    Travelers: 1
 
-	Flight Number: UA 14
+    Flight Number: UA 14
 
-	Aircraft type: Boeing 767-300
+    Aircraft type: Boeing 767-300
 
-	Emissions per seat type: Carbon emissions estimate:387 kg CO2387 kilograms.
+    Emissions per seat type: Carbon emissions estimate:387 kg CO2387 kilograms.
 
-	Hide details
+    Hide details
 
-	## Total due
+    ## Total due
 
-	$3,185.23  
-	+ 55,000 miles
+    $3,185.23  
+    + 55,000 miles
   expected_summary: |
-	- LHR > SFO UA 939: dep LHR Fri Aug 22, 4:15 pm, arr SFO 7:10 pm (nonstop, 10h55m, Boeing 787-9 Dreamliner).
-	- SFO > EWR UA 2259: dep SFO Tue Aug 26, 9:20 am, arr EWR 6:00 pm (nonstop, dur: ???, Boeing 787-9 Dreamliner).
-	- EWR > LHR UA 14: dep EWR Thu Aug 28, 6:45 pm, arr LHR Fri 7:15 am (nonstop, 7h30m, Boeing 767-300).
-	Cost: $3,185.23 + 55000 miles
+    - Itinerary: $3,185.23 + 55,000 miles
+      - LHR > SFO UA 939: dep LHR Fri Aug 22, 4:15 pm, arr SFO 7:10 pm (nonstop, 10h55m, Boeing 787-9 Dreamliner).
+      - SFO > EWR UA 2259: dep SFO Tue Aug 26, 9:20 am, arr EWR 6:00 pm (nonstop, dur: ???, Boeing 787-9 Dreamliner).
+      - EWR > LHR UA 14: dep EWR Thu Aug 28, 6:45 pm, arr LHR Fri 7:15 am (nonstop, 7h30m, Boeing 767-300).

@@ -1,83 +1,83 @@
 - description: "3-flight itinerary with missing duration and aircraft for one leg"
   input_text_block: |
-	## Roundtrip (1 TRAVELER)
-	
-	Revise this trip
-	
-	Flight selection list
-	
-	Flight 1 of 2
-	
-	### London LHR to San Francisco SFO
-	
-	Jan 10Saturday, January 101:45 PM to 5:00 PMNonstop
-	
-	Duration: 11h 15m11 hours15 minutes
-	
-	**Travelers:** 1
-	
-	Flight Number: UA 949
-	
-	Aircraft type: Boeing 777-200
-	
-	Emissions per seat type: Carbon emissions estimate:719 kg CO2719 kilograms.
-	
-	Hide details
-	
-	Flight 2 of 2
-	
-	### San Francisco SFO to London LHR
-	
-	Jan 16Friday, January 1612:50 PM to 7:25 AMNonstop
-	
-	![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
-	
-	Duration: 10h 35m10 hours35 minutes
-	
-	**Travelers:** 1
-	
-	Flight Number: UA 901
-	
-	Aircraft type: Boeing 777-200
-	
-	Emissions per seat type: Carbon emissions estimate:605 kg CO2605 kilograms.
-	
-	Hide details
-	
-	## Price breakdown
-	
-	Fare
-	
-	$922.00
-	
-	### 1 adult 18+
-	
-	$922.00/person
-	
-	Service fees
-	
-	$975.00
-	
-	Upgrades
-	
-	40,000 miles
-	
-	Airport passenger duty
-	
-	Click on this to get more information
-	
-	$135.00
-	
-	Taxes and fees
-	
-	$262.83
-	
-	## Total due
-	
-	$2,294.83  
-	+ 40,000 miles
+    ## Roundtrip (1 TRAVELER)
+    
+    Revise this trip
+    
+    Flight selection list
+    
+    Flight 1 of 2
+    
+    ### London LHR to San Francisco SFO
+    
+    Jan 10Saturday, January 101:45 PM to 5:00 PMNonstop
+    
+    Duration: 11h 15m11 hours15 minutes
+    
+    **Travelers:** 1
+    
+    Flight Number: UA 949
+    
+    Aircraft type: Boeing 777-200
+    
+    Emissions per seat type: Carbon emissions estimate:719 kg CO2719 kilograms.
+    
+    Hide details
+    
+    Flight 2 of 2
+    
+    ### San Francisco SFO to London LHR
+    
+    Jan 16Friday, January 1612:50 PM to 7:25 AMNonstop
+    
+    ![alert](https://www.united.com/f5798e8261d220df34c0.warning-black-exclamation.svg)Please note this flight involves a date change
+    
+    Duration: 10h 35m10 hours35 minutes
+    
+    **Travelers:** 1
+    
+    Flight Number: UA 901
+    
+    Aircraft type: Boeing 777-200
+    
+    Emissions per seat type: Carbon emissions estimate:605 kg CO2605 kilograms.
+    
+    Hide details
+    
+    ## Price breakdown
+    
+    Fare
+    
+    $922.00
+    
+    ### 1 adult 18+
+    
+    $922.00/person
+    
+    Service fees
+    
+    $975.00
+    
+    Upgrades
+    
+    40,000 miles
+    
+    Airport passenger duty
+    
+    Click on this to get more information
+    
+    $135.00
+    
+    Taxes and fees
+    
+    $262.83
+    
+    ## Total due
+    
+    $2,294.83  
+    + 40,000 miles
 
   expected_summary: |
-  	- LHR > SFO UA 949: dep LHR Sat Jan 10, 1:45 pm, arr SFO 5:00 pm (nonstop, 11h15m, Boeing 777-200).
-	- SFO > LHR UA 901: dep SFO Fri Jan 16, 12:50 pm, arr LHR Sat 7:25 am (nonstop, 10h35m, Boeing 777-200).
-	Cost: $2,294.83 + 40000 miles
+    - Itinerary: $2,294.83 + 40,000 miles
+      - LHR > SFO UA 949: dep LHR Sat Jan 10, 1:45 pm, arr SFO 5:00 pm (nonstop, 11h15m, Boeing 777-200).
+      - SFO > LHR UA 901: dep SFO Fri Jan 16, 12:50 pm, arr LHR Sat 7:25 am (nonstop, 10h35m, Boeing 777-200).
