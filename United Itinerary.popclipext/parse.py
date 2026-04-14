@@ -793,9 +793,67 @@ def parse_united_itinerary(text):
     return "\n".join(output)
 
 
+def _get_input():
+    """Return (text, from_clipboard). Sources in priority order:
+    1. POPCLIP_TEXT env var (PopClip invocation)
+    2. argv[1] file path (CLI file mode)
+    3. stdin if piped
+    4. pbpaste (macOS clipboard fallback)
+    """
+    import sys
+
+    popclip = os.environ.get("POPCLIP_TEXT")
+    if popclip:
+        return popclip, False
+
+    if len(sys.argv) > 1:
+        try:
+            with open(sys.argv[1], "r", encoding="utf-8") as f:
+                return f.read(), False
+        except FileNotFoundError:
+            print(f"Error: File '{sys.argv[1]}' not found", file=sys.stderr)
+            sys.exit(1)
+
+    if not sys.stdin.isatty():
+        return sys.stdin.read(), False
+
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["pbpaste"], capture_output=True, text=True, check=True
+        )
+        return result.stdout, True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Error: could not read clipboard", file=sys.stderr)
+        sys.exit(1)
+
+
+def _output_result(text, to_clipboard):
+    import sys
+    import subprocess
+
+    if to_clipboard:
+        try:
+            subprocess.run(["pbcopy"], input=text, text=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("Error: could not write clipboard", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print(text)
+
+
+def main():
+    import sys
+    text, from_clipboard = _get_input()
+    if not text.strip():
+        print("Error: no input provided", file=sys.stderr)
+        sys.exit(1)
+    summary = parse_united_itinerary(text)
+    if not summary:
+        print("No valid United itinerary found.", file=sys.stderr)
+        sys.exit(1)
+    _output_result(summary, from_clipboard)
+
+
 if __name__ == "__main__":
-    text = os.environ.get("POPCLIP_TEXT", "")
-    if text:
-        result = parse_united_itinerary(text)
-        if result:
-            print(result)
+    main()
