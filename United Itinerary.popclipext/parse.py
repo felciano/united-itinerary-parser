@@ -47,6 +47,38 @@ class Itinerary:
     accrual_pqf: Optional[int] = None
 
 
+CHUNK_GAP_THRESHOLD = timedelta(hours=24)
+
+
+def group_into_chunks(segments):
+    """Group consecutive segments into trip chunks.
+
+    Two segments belong to the same chunk iff the first's arrival airport
+    matches the second's departure airport AND the time gap between them
+    is within [0, 24] hours. Otherwise the second starts a new chunk.
+    """
+    if not segments:
+        return []
+
+    chunks = []
+    current = [segments[0]]
+
+    for prev, curr in zip(segments, segments[1:]):
+        gap = curr.dep_datetime - prev.arr_datetime
+        same_chunk = (
+            prev.arr_airport == curr.dep_airport
+            and timedelta(0) <= gap <= CHUNK_GAP_THRESHOLD
+        )
+        if same_chunk:
+            current.append(curr)
+        else:
+            chunks.append(Chunk(segments=current))
+            current = [curr]
+
+    chunks.append(Chunk(segments=current))
+    return chunks
+
+
 def _clean_duration(dur_str):
     """Clean a duration string like '23h 15m23 hours15 minutes' to '23h15m'."""
     time_match = re.search(r'^(\d+h(?: \d+m)?)', dur_str)
