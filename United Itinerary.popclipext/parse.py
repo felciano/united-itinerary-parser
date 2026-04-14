@@ -79,6 +79,35 @@ def group_into_chunks(segments):
     return chunks
 
 
+def detect_format(text):
+    """Classify the input text as 'email', 'reservation_ui', or 'unknown'.
+
+    Email signatures: both 'Thank you for choosing United' and
+    'Confirmation Number:' appear (the combination rarely occurs
+    coincidentally in reservation-UI text).
+
+    Reservation-UI signatures: any of 'Flight selection list',
+    'Aircraft type:', or 'Duration:' appears.
+
+    If both match, email wins (more specific). If neither matches,
+    returns 'unknown'.
+    """
+    is_email = (
+        "Thank you for choosing United" in text
+        and "Confirmation Number:" in text
+    )
+    is_reservation_ui = (
+        "Flight selection list" in text
+        or "Aircraft type:" in text
+        or "Duration:" in text
+    )
+    if is_email:
+        return "email"
+    if is_reservation_ui:
+        return "reservation_ui"
+    return "unknown"
+
+
 def _clean_duration(dur_str):
     """Clean a duration string like '23h 15m23 hours15 minutes' to '23h15m'."""
     time_match = re.search(r'^(\d+h(?: \d+m)?)', dur_str)
