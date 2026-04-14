@@ -282,6 +282,103 @@ def parse_email(text):
     )
 
 
+# --- Email renderer -------------------------------------------------------
+
+_WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+_MONTH_SHORT = [None, "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _fmt_time_12h(dt):
+    """Format time as '10:25 am' / '4:35 pm' / '12:15 pm' (no leading zero on hour)."""
+    hour = dt.hour % 12 or 12
+    meridiem = "am" if dt.hour < 12 else "pm"
+    return f"{hour}:{dt.minute:02d} {meridiem}"
+
+
+def _fmt_money(amount):
+    """Format as '$2,564.60'."""
+    return f"${amount:,.2f}"
+
+
+def _render_segment_line_email(seg):
+    dep_weekday = _WEEKDAY_SHORT[seg.dep_datetime.weekday()]
+    dep_month = _MONTH_SHORT[seg.dep_datetime.month]
+    dep_day = seg.dep_datetime.day
+    dep_time = _fmt_time_12h(seg.dep_datetime)
+    arr_time = _fmt_time_12h(seg.arr_datetime)
+
+    arr_prefix = ""
+    if seg.arr_datetime.date() != seg.dep_datetime.date():
+        arr_prefix = f" {_WEEKDAY_SHORT[seg.arr_datetime.weekday()]}"
+
+    extras = []
+    if seg.fare_class:
+        extras.append(seg.fare_class)
+    if seg.seat:
+        extras.append(f"seat {seg.seat}")
+    extra_str = f" ({', '.join(extras)})" if extras else ""
+
+    return (
+        f"    - {seg.dep_airport} > {seg.arr_airport} UA {seg.flight_number}: "
+        f"dep {seg.dep_airport} {dep_weekday} {dep_month} {dep_day}, {dep_time}, "
+        f"arr {seg.arr_airport}{arr_prefix} {arr_time}{extra_str}."
+    )
+
+
+def _render_chunk_header_email(chunk):
+    first = chunk.segments[0]
+    last = chunk.segments[-1]
+    via_parts = [
+        f"{seg.arr_city or seg.arr_airport} ({seg.arr_airport})"
+        for seg in chunk.segments[:-1]
+    ]
+    via_str = f" (via {', '.join(via_parts)})" if via_parts else ""
+    return (
+        f"  - {first.dep_city or first.dep_airport} ({first.dep_airport}) "
+        f"to {last.arr_city or last.arr_airport} ({last.arr_airport}){via_str}:"
+    )
+
+
+def _render_itinerary_header_email(it):
+    parts = ["- Itinerary"]
+    if it.confirmation_number:
+        parts.append(f" {it.confirmation_number}")
+    parts.append(":")
+
+    trailing = []
+    if it.total_cost is not None:
+        cost_piece = _fmt_money(it.total_cost)
+        if it.upgrade_fees:
+            cost_piece += f" + {_fmt_money(it.upgrade_fees)} upgrades"
+        trailing.append(cost_piece)
+    if it.eticket_number:
+        trailing.append(f"(eTicket {it.eticket_number})")
+
+    line = "".join(parts)
+    if trailing:
+        line += " " + " ".join(trailing)
+        if not line.endswith("."):
+            line += "."
+
+    if it.accrual_award_miles is not None:
+        line += (
+            f" Accrual: {it.accrual_award_miles:,} miles "
+            f"/ {it.accrual_pqp:,} PQP / {it.accrual_pqf} PQF."
+        )
+
+    return line
+
+
+def render_email(it):
+    lines = [_render_itinerary_header_email(it)]
+    for chunk in it.chunks:
+        lines.append(_render_chunk_header_email(chunk))
+        for seg in chunk.segments:
+            lines.append(_render_segment_line_email(seg))
+    return "\n".join(lines)
+
+
 def _clean_duration(dur_str):
     """Clean a duration string like '23h 15m23 hours15 minutes' to '23h15m'."""
     time_match = re.search(r'^(\d+h(?: \d+m)?)', dur_str)
