@@ -42,3 +42,25 @@ def test_parse_email_segments_FQZ1B5_multi_flight():
     # Fare class codes
     assert segments[0].fare_class == "Economy W"
     assert segments[2].fare_class == "Economy S"
+
+
+def test_parse_email_attaches_seats_NLY82V():
+    text = (TEST_CASES / "test-case-email-NLY82V-popclip-input.txt").read_text()
+    segments = parser._parse_email_segments(text)
+    parser._attach_seats_from_traveler_details(text, segments)
+    assert segments[0].seat == "35F"
+
+
+def test_parse_email_attaches_seats_FQZ1B5():
+    text = (TEST_CASES / "test-case-email-FQZ1B5-popclip-input.txt").read_text()
+    segments = parser._parse_email_segments(text)
+    parser._attach_seats_from_traveler_details(text, segments)
+    # Seats block in file:
+    #   Seats: LHR-EWR 33K
+    #   EWR-PUJ 09D
+    #   PUJ-IAH 09D
+    #   IAH-LHR 32G
+    assert segments[0].seat == "33K"
+    assert segments[1].seat == "09D"
+    assert segments[2].seat == "09D"
+    assert segments[3].seat == "32G"

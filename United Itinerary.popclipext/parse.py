@@ -204,6 +204,33 @@ def _parse_email_segments(text):
     return segments
 
 
+_SEAT_PAIR = re.compile(r"([A-Z]{3})-([A-Z]{3})\s+([0-9]{1,3}[A-Z])")
+
+
+def _attach_seats_from_traveler_details(text, segments):
+    """Parse seat assignments from the Traveler Details block and attach by
+    airport pair. Mutates segments in place."""
+    start = text.find("Traveler Details")
+    if start < 0:
+        return
+    end_candidates = [
+        text.find("Purchase Summary", start),
+        text.find("Additional Purchase Summary", start),
+        text.find("Fare Rules", start),
+    ]
+    end_candidates = [c for c in end_candidates if c > 0]
+    end = min(end_candidates) if end_candidates else len(text)
+    region = text[start:end]
+
+    seats_by_pair = {}
+    for match in _SEAT_PAIR.finditer(region):
+        dep, arr, seat = match.groups()
+        seats_by_pair.setdefault((dep, arr), seat)
+
+    for seg in segments:
+        seg.seat = seats_by_pair.get((seg.dep_airport, seg.arr_airport))
+
+
 def _clean_duration(dur_str):
     """Clean a duration string like '23h 15m23 hours15 minutes' to '23h15m'."""
     time_match = re.search(r'^(\d+h(?: \d+m)?)', dur_str)
