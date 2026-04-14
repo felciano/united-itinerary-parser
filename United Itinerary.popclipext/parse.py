@@ -108,6 +108,102 @@ def detect_format(text):
     return "unknown"
 
 
+# --- Email parser ---------------------------------------------------------
+
+_EMAIL_FLIGHT_HEADER = re.compile(
+    r"Flight (\d+) of (\d+)\s+UA(\d+)\s+Class:\s*(.+?)\s*\(([A-Z]+)\)"
+)
+_DATE_LINE = re.compile(
+    r"[A-Za-z]{3},\s+([A-Za-z]+)\s+(\d{1,2}),\s+(\d{4})"
+)
+_TIME_LINE = re.compile(r"(\d{1,2}):(\d{2})\s*([APap][Mm])")
+_CITY_LINE = re.compile(r"([^\t\n(]+?)\s*\(([A-Z]{3})\)")
+
+_MONTHS = {
+    "January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
+    "July": 7, "August": 8, "September": 9, "October": 10, "November": 11,
+    "December": 12,
+    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "Jun": 6,
+    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+    # "May" is already in the dict (used for both full and abbreviated)
+}
+
+
+def _first_city_name(raw):
+    """Extract city from 'Newark, NJ/New York, NY, US' style label
+    (returns text up to first comma)."""
+    return raw.split(",", 1)[0].strip()
+
+
+def _to_24h(hour, minute, meridiem):
+    meridiem = meridiem.upper()
+    if meridiem == "AM":
+        return (0 if hour == 12 else hour, minute)
+    return (hour if hour == 12 else hour + 12, minute)
+
+
+def _parse_email_segments(text):
+    """Split an email body on 'Flight N of M' markers and parse each block.
+
+    Block structure (tab-separated from HTML table copy-paste):
+        Flight N of M UA<num>\tClass: United <name> (<code>)
+        <Weekday>, <Mon DD, YYYY>\t<Weekday>, <Mon DD, YYYY>
+        HH:MM AM/PM\tHH:MM AM/PM
+        <DepCity, ..., Country (IATA)>\t<ArrCity, ..., Country (IATA)>
+    """
+    headers = list(_EMAIL_FLIGHT_HEADER.finditer(text))
+    if not headers:
+        return []
+
+    segments = []
+    for idx, m in enumerate(headers):
+        start = m.end()
+        end = headers[idx + 1].start() if idx + 1 < len(headers) else len(text)
+        body = text[start:end]
+
+        dates = _DATE_LINE.findall(body)
+        times = _TIME_LINE.findall(body)
+        cities = _CITY_LINE.findall(body)
+        if len(dates) < 2 or len(times) < 2 or len(cities) < 2:
+            # Skip malformed block; don't raise — best-effort parity with the
+            # existing reservation-UI parser.
+            continue
+
+        dep_month, dep_day, dep_year = dates[0]
+        arr_month, arr_day, arr_year = dates[1]
+        dep_h, dep_m, dep_mer = times[0]
+        arr_h, arr_m, arr_mer = times[1]
+        dep_city_raw, dep_iata = cities[0]
+        arr_city_raw, arr_iata = cities[1]
+
+        dep_hh, dep_mm = _to_24h(int(dep_h), int(dep_m), dep_mer)
+        arr_hh, arr_mm = _to_24h(int(arr_h), int(arr_m), arr_mer)
+
+        flight_num = m.group(3)
+        class_name = m.group(4).strip()
+        class_code = m.group(5)
+        # Strip leading "United " for compactness
+        if class_name.lower().startswith("united "):
+            class_name = class_name[len("United "):]
+        fare_class = f"{class_name} {class_code}"
+
+        segments.append(Segment(
+            flight_number=flight_num,
+            dep_airport=dep_iata,
+            dep_city=_first_city_name(dep_city_raw),
+            arr_airport=arr_iata,
+            arr_city=_first_city_name(arr_city_raw),
+            dep_datetime=datetime(
+                int(dep_year), _MONTHS[dep_month], int(dep_day), dep_hh, dep_mm,
+            ),
+            arr_datetime=datetime(
+                int(arr_year), _MONTHS[arr_month], int(arr_day), arr_hh, arr_mm,
+            ),
+            fare_class=fare_class,
+        ))
+    return segments
+
+
 def _clean_duration(dur_str):
     """Clean a duration string like '23h 15m23 hours15 minutes' to '23h15m'."""
     time_match = re.search(r'^(\d+h(?: \d+m)?)', dur_str)
