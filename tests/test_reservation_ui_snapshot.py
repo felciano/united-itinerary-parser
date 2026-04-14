@@ -17,6 +17,7 @@ import parse as parser
     "test-case-3.yaml",
     "test-case-4.yaml",
     "test-case-5.yaml",
+    "test-case-6.yaml",
 ])
 def test_reservation_ui_output_matches_fixture(fixture_file: str) -> None:
     case = load_yaml_case(fixture_file)
