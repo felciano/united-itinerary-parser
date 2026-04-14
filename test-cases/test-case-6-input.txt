@@ -1,0 +1,73 @@
+Multi-City (1 TRAVELER)
+Revise this trip
+Flight selection list
+Flight 1 of 3
+London LHR to Punta Cana PUJ
+Apr 25Saturday, April 256:00 PM to 12:15 PM1 stop
+Duration: 23h 15m23 hours15 minutes
+Travelers: 1
+Flight connection list
+Connection 1 of 2
+London LHR to Newark EWR
+Apr 25Saturday, April 256:00 PM to 9:20 PM
+Duration: 8h 20m8 hours20 minutes
+Flight Number: UA 921
+Aircraft type: Boeing 767-300
+Duration
+10h 51m10 hours51 minutes
+Connection 2 of 2
+Newark EWR to Punta Cana PUJ
+Apr 26Sunday, April 268:11 AM to 12:15 PM
+Duration: 4h 4m4 hours4 minutes
+Flight Number: UA 1514
+Aircraft type: Boeing 737 MAX 9
+
+Hide details
+Flight 2 of 3
+Punta Cana PUJ to San Francisco SFO
+Apr 30Thursday, April 304:19 PM to 9:30 AM1 stop
+Duration: 20h 11m20 hours11 minutes
+Travelers: 1
+Flight connection list
+Connection 1 of 2
+Punta Cana PUJ to Newark EWR
+Apr 30Thursday, April 304:19 PM to 8:31 PM
+Duration: 4h 12m4 hours12 minutes
+Flight Number: UA 1526
+Aircraft type: Boeing 737 MAX 9
+Duration
+9h 29m9 hours29 minutes
+Connection 2 of 2
+Newark EWR to San Francisco SFO
+May 1Friday, May 16:00 AM to 9:30 AM
+Duration: 6h 30m6 hours30 minutes
+Flight Number: UA 2115
+Aircraft type: Boeing 757-200
+
+Hide details
+Flight 3 of 3
+San Francisco SFO to London LHR
+May 3Sunday, May 312:50 PM to 7:25 AMNonstop
+alertPlease note this flight involves a date change
+Duration: 10h 35m10 hours35 minutes
+Travelers: 1
+Flight Number: UA 901
+Aircraft type: Boeing 787-9 Dreamliner
+
+Hide details
+Price breakdown
+Fare
+$1,788.80
+1 adult 18+
+$1,788.80/person
+Service fees
+$975.00
+Upgrades
+62,500 miles
+
+Taxes and fees
+$484.45
+Total due
+$3,248.25
++ 62,500 miles
+or starting from$191/month

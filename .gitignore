@@ -20,3 +20,6 @@ venv/
 
 # Debug files
 popclip-debug.txt
+
+# Claude Code local settings
+.claude/
