@@ -231,6 +231,57 @@ def _attach_seats_from_traveler_details(text, segments):
         seg.seat = seats_by_pair.get((seg.dep_airport, seg.arr_airport))
 
 
+_CONF_NUMBER = re.compile(r"Confirmation Number:\s*\n\s*([A-Z0-9]{6})")
+_ETICKET = re.compile(r"eTicket number:\s*([0-9]+)")
+_TOTAL_LINE = re.compile(r"^Total:\s+([\d,]+\.\d{2})\s*USD", re.MULTILINE)
+_ACCRUAL_TOTALS = re.compile(
+    r"MileagePlus accrual totals:\s+([\d,]+)\s+([\d,]+)\s+(\d+)"
+)
+
+
+def _decimal_or_none(s):
+    if s is None:
+        return None
+    return Decimal(s.replace(",", ""))
+
+
+def _int_or_none(s):
+    if s is None:
+        return None
+    return int(s.replace(",", ""))
+
+
+def parse_email(text):
+    """Parse a United eTicket email body into an Itinerary."""
+    segments = _parse_email_segments(text)
+    _attach_seats_from_traveler_details(text, segments)
+    chunks = group_into_chunks(segments)
+
+    conf_m = _CONF_NUMBER.search(text)
+    etk_m = _ETICKET.search(text)
+    totals = _TOTAL_LINE.findall(text)
+    accrual_m = _ACCRUAL_TOTALS.search(text)
+
+    total_cost = _decimal_or_none(totals[0]) if totals else None
+    upgrade_fees = None
+    if len(totals) > 1:
+        upgrade_fees = sum(
+            (_decimal_or_none(t) for t in totals[1:]), start=Decimal("0")
+        )
+
+    return Itinerary(
+        source="email",
+        chunks=chunks,
+        total_cost=total_cost,
+        confirmation_number=conf_m.group(1) if conf_m else None,
+        eticket_number=etk_m.group(1) if etk_m else None,
+        upgrade_fees=upgrade_fees,
+        accrual_award_miles=_int_or_none(accrual_m.group(1)) if accrual_m else None,
+        accrual_pqp=_int_or_none(accrual_m.group(2)) if accrual_m else None,
+        accrual_pqf=_int_or_none(accrual_m.group(3)) if accrual_m else None,
+    )
+
+
 def _clean_duration(dur_str):
     """Clean a duration string like '23h 15m23 hours15 minutes' to '23h15m'."""
     time_match = re.search(r'^(\d+h(?: \d+m)?)', dur_str)
