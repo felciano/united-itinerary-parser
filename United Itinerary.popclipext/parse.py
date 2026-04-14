@@ -1,8 +1,50 @@
 #!/usr/bin/env python3
 """PopClip extension to parse United Airlines itineraries."""
 
+from __future__ import annotations
+
 import os
 import re
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import Optional
+
+
+@dataclass
+class Segment:
+    flight_number: str
+    dep_airport: str
+    dep_city: Optional[str]
+    arr_airport: str
+    arr_city: Optional[str]
+    dep_datetime: datetime
+    arr_datetime: datetime
+    fare_class: Optional[str] = None
+    seat: Optional[str] = None
+    aircraft: Optional[str] = None
+    duration: Optional[timedelta] = None
+
+
+@dataclass
+class Chunk:
+    segments: list
+    total_duration: Optional[timedelta] = None
+
+
+@dataclass
+class Itinerary:
+    source: str  # "reservation_ui" | "email"
+    chunks: list = field(default_factory=list)
+    total_cost: Optional[Decimal] = None
+    miles: Optional[int] = None
+    plus_points: Optional[int] = None
+    confirmation_number: Optional[str] = None
+    eticket_number: Optional[str] = None
+    upgrade_fees: Optional[Decimal] = None
+    accrual_award_miles: Optional[int] = None
+    accrual_pqp: Optional[int] = None
+    accrual_pqf: Optional[int] = None
 
 
 def _clean_duration(dur_str):
