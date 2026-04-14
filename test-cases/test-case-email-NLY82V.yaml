@@ -1,0 +1,6 @@
+- description: "United eTicket email, single nonstop segment (IAD > LHR)"
+  input_text_block_file: "test-case-email-NLY82V-popclip-input.txt"
+  expected_summary: |
+    - Itinerary NLY82V: $556.50 (eTicket 0162379511080). Accrual: 4,707 miles / 523 PQP / 1 PQF.
+      - Washington (IAD) to London (LHR):
+        - IAD > LHR UA 924: dep IAD Wed Mar 11, 11:15 pm, arr LHR Thu 10:50 am (Economy V, seat 35F).

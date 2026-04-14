@@ -743,9 +743,19 @@ def parse_original_format(text):
 
 
 def parse_united_itinerary(text):
-    """Convert a United itinerary to a terse summary. Supports both formats."""
+    """Convert a United itinerary to a terse summary.
 
-    # Detect format: PopClip format uses " • " separators
+    Handles three input sources:
+    - United eTicket/Receipt emails (via parse_email + render_email)
+    - Reservation-UI text in PopClip format (bullet separators)
+    - Reservation-UI text in original markdown format
+    """
+
+    # Email input takes priority — handle first with the dataclass pipeline.
+    if detect_format(text) == "email":
+        return render_email(parse_email(text))
+
+    # Detect reservation-UI variant: PopClip format uses " • " separators
     if " • " in text:
         output = parse_popclip_format(text)
     else:

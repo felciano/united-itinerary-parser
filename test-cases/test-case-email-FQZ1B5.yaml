@@ -1,0 +1,10 @@
+- description: "United eTicket email, 4 segments across 2 chunks, upgrade fees"
+  input_text_block_file: "test-case-email-FQZ1B5-popclip-input.txt"
+  expected_summary: |
+    - Itinerary FQZ1B5: $2,564.60 + $1,100.00 upgrades (eTicket 0162389632983). Accrual: 21,510 miles / 2,151 PQP / 4 PQF.
+      - London (LHR) to Punta Cana (PUJ) (via Newark (EWR)):
+        - LHR > EWR UA 17: dep LHR Sun Apr 26, 10:25 am, arr EWR 1:20 pm (Economy W, seat 33K).
+        - EWR > PUJ UA 1514: dep EWR Mon Apr 27, 8:11 am, arr PUJ 12:15 pm (Economy W, seat 09D).
+      - Punta Cana (PUJ) to London (LHR) (via Houston (IAH)):
+        - PUJ > IAH UA 524: dep PUJ Thu Apr 30, 2:20 pm, arr IAH 6:04 pm (Economy S, seat 09D).
+        - IAH > LHR UA 5: dep IAH Thu Apr 30, 8:05 pm, arr LHR Fri 11:35 am (Economy S, seat 32G).
