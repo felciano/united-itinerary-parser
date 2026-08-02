@@ -27,11 +27,16 @@ would break even if the single-file rule were relaxed.
 ## Input format
 
 Google Flights paste is line-oriented, with adjacent field values concatenated
-without separators. Five line shapes carry all the signal. Everything else is
-ignored by not matching any anchor — this is deliberate, since the noise lines
-vary (legroom, Wi-Fi, in-seat power, on-demand video, contrail warming,
-emissions estimates, baggage and fare conditions, and prose such as
-`Avoids as much CO2e as 791 trees absorb in a day`).
+without separators. Seven line shapes carry all the signal. Everything else is
+ignored by not matching any anchor. This is deliberate rather than incidental:
+the noise varies widely across pastes and new varieties keep appearing.
+Observed so far — legroom, Wi-Fi (both `Wi-Fi for a fee` and `Free Wi-Fi`),
+in-seat power and USB, on-demand video, `Stream media to your device`,
+contrail warming, emissions estimates, baggage and fare conditions,
+`Often delayed by 30+ min`, `Plane and crew by ANA Wings`, and prose such as
+`Avoids as much CO2e as 791 trees absorb in a day`. Blank lines may or may not
+separate segments. A filtering approach that enumerated noise would have
+broken on each new paste; anchoring on structure has not.
 
 | Anchor | Example | Yields |
 |---|---|---|
@@ -41,7 +46,7 @@ emissions estimates, baggage and fare conditions, and prose such as
 | Time + airport | `5:15 PM+1Haneda Airport (HND)` | local time, day offset, airport name, IATA |
 | Travel time | `Travel time: 14 hr 15 minOvernight` | segment separator (value not stored) |
 | Airline / cabin / aircraft / flight | `SWISSEconomyAirbus A220-300 PassengerLX 355` | `LX`, `355`, `Economy`, `Airbus A220-300` |
-| Layover | `10 hr 35 min layoverRome (FCO)Long layover` | segment separator (values not stored) |
+| Layover | `10 hr 35 min layoverRome (FCO)Long layover` | segment separator, and a city name for that IATA code |
 
 The airline line is parsed with one regex anchored at both ends: non-greedy
 airline name, then a cabin from `Premium economy|Economy|Business|First`
@@ -60,10 +65,14 @@ not the paste. A departure-only paste of a round-trip search still says
 Example 3's `LIN 3:05 PM → LCY 3:55 PM` covers a stated 1 hr 50 min of travel,
 because Milan and London are an hour apart. Arrival datetimes must therefore
 come from the printed local time plus the printed `+N` marker, never from
-adding the travel time to the departure. The `+N` offset is relative to the
-slice's base date, not to the previous segment: in Example 3 the third
-segment departs `3:05 PM+1`, one day after the `Sun, Aug 30` slice date, even
-though two layovers have elapsed.
+adding the travel time to the departure.
+
+The `+N` offset counts from the slice's base date, not cumulatively from the
+previous segment. The STN→HND sample settles this: base date `Wed, Aug 26`,
+then a 14 hr 15 min layover carries `12:10 PM` into `2:25 AM+1`, and every
+subsequent time — `7:05 PM+1`, `9:00 PM+1`, `10:20 PM+1` — stays at `+1`
+rather than accumulating, even across a second layover. All of them are
+Aug 27.
 
 This is also why `group_into_chunks` must not be used for this format. Its
 24-hour rule would misgroup a layover longer than a day, and cross-timezone
@@ -86,15 +95,13 @@ rather than from today, which handles a December-to-January crossing.
 Chunk headers resolve each airport's label in this order:
 
 1. A literal `_IATA_CITY` dict in `parse.py`.
-2. The airport name with a trailing ` Airport` stripped.
+2. The city name from a layover line for that IATA code, anywhere in the same
+   paste.
+3. The airport name with a trailing ` Airport` stripped.
 
 The dict is a **curated exception list**, not a derived rule. It holds only
-those airports whose Google Flights name reads poorly as a label, and it is
-extended by hand as new pastes surface cases. Everything else falls through to
-the stripped name, which is correct for the large majority of airports because
-Google usually names them after their city.
-
-Seeded contents, covering every airport in the fixtures:
+those airports whose Google Flights name reads poorly as a label and which the
+paste gives no other way to name, and it is extended by hand as cases surface:
 
 ```python
 _IATA_CITY = {
@@ -103,26 +110,35 @@ _IATA_CITY = {
 }
 ```
 
-Resulting labels:
-
-| IATA | Google Flights name | Renders as | Source |
-|---|---|---|---|
-| LHR | Heathrow Airport | `Heathrow` | stripped |
-| GVA | Geneva Airport | `Geneva` | stripped |
-| BIQ | Biarritz Airport | `Biarritz` | stripped |
-| LCY | London City Airport | `London City` | stripped |
-| LIN | Milan Linate Airport | `Milan Linate` | stripped |
-| HND | Haneda Airport | `Tokyo` | map |
-| FCO | Leonardo da Vinci International Airport | `Rome` | map |
-
-LHR is deliberately absent: `Heathrow` reads better than `London`, and on a
+LHR is deliberately absent. `Heathrow` reads better than `London`, and on a
 London round trip out of LHR and back into LCY, mapping both to `London` would
 collapse the distinction between the endpoints.
 
-There is no tier sourcing city names from layover lines. It existed only to
-rescue FCO, which the map now handles, and keeping it would reintroduce
-inconsistency at LIN — layover lines say `Milan` while the stripped name says
-`Milan Linate`. Layover lines are structural anchors only.
+Tier 2 keeps the map small. `Kansai International Airport (KIX)` strips to
+`Kansai International`, but the same paste carries `1 hr 55 min layoverOsaka
+(KIX)`, so it resolves to `Osaka` with no map entry. The map only has to grow
+for airports that are awkwardly named *and* never appear as a layover.
+
+The tradeoff is that an unmapped airport can read differently across pastes
+depending on its role — LIN as `Milan` where it is a stop, `Milan Linate`
+where it is an endpoint. Adding a map entry pins it. This is accepted:
+self-healing on the airports that actually bother you beats maintaining
+coverage up front.
+
+Resulting labels:
+
+| IATA | Google Flights name | Renders as | Tier |
+|---|---|---|---|
+| LHR | Heathrow Airport | `Heathrow` | stripped |
+| STN | London Stansted Airport | `London Stansted` | stripped |
+| GVA | Geneva Airport | `Geneva` | stripped |
+| BIQ | Biarritz Airport | `Biarritz` | stripped |
+| LCY | London City Airport | `London City` | stripped |
+| IST | Istanbul Airport | `Istanbul` | stripped (layover agrees) |
+| LIN | Milan Linate Airport | `Milan` / `Milan Linate` | layover / stripped |
+| KIX | Kansai International Airport | `Osaka` | layover |
+| HND | Haneda Airport | `Tokyo` | map |
+| FCO | Leonardo da Vinci International Airport | `Rome` | map |
 
 This resolution applies to the Google Flights path only. The email and
 reservation-UI sources already carry usable city names, and routing them
@@ -222,7 +238,8 @@ Example 2 (nonstop, overnight, crosses midnight):
     - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
 ```
 
-Example 3 (two stops, `+1` rollovers, timezone-crossing final leg):
+Example 3 (a `Return` slice, two stops, `+1` rollovers, timezone-crossing
+final leg):
 
 ```
 - Google Flights itinerary: £1,355 round trip.
@@ -232,8 +249,20 @@ Example 3 (two stops, `+1` rollovers, timezone-crossing final leg):
     - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).
 ```
 
+Example 5 (two stops, mixed airlines, blank-line separators, `+1` held flat
+across two layovers, and a layover-sourced city name at KIX):
+
+```
+- Google Flights itinerary: £1,387 round trip.
+  - London Stansted (STN) to Tokyo (HND) (via Istanbul (IST), Osaka (KIX)):
+    - STN > IST TK 1246: dep STN Wed Aug 26, 6:15 am, arr IST 12:10 pm (Economy, Boeing 737).
+    - IST > KIX TK 86: dep IST Thu Aug 27, 2:25 am, arr KIX 7:05 pm (Economy, Boeing 787).
+    - KIX > HND NH 98: dep KIX Thu Aug 27, 9:00 pm, arr HND 10:20 pm (Economy, Boeing 737).
+```
+
 Arrival carries a weekday prefix only when it falls on a different date from
-departure, matching existing email behaviour.
+departure, matching existing email behaviour. Example 2 is the only sample
+that triggers it.
 
 ## Round-trip handling
 
@@ -242,11 +271,19 @@ A paste containing both a `Departure` and a `Return` block yields one
 behaviour: render once if both blocks state the same amount, otherwise take
 the last block's amount, since that reflects the fully selected combination.
 
-No genuine two-block paste was available when this spec was written. The
-round-trip fixture is synthesized by concatenating the Example 2 and Example 3
-blocks, which is structurally faithful (LHR→HND outbound, HND→LCY return) and
-exercises the differing-price branch. It is labelled synthetic in the fixture
-file. A real paste can replace it later without parser changes.
+No genuine two-block paste was available when this spec was written. Five
+samples were supplied and every one of them is a single slice — four
+`Departure`, one `Return` — even though the round-trip search context is
+visible in the `round trip` price label. It may be that the Google Flights UI
+never puts both halves in one copyable region.
+
+The parser stays tolerant of multiple slices regardless, because the splitter
+handles N slices at no extra cost, and the round-trip fixture is synthesized
+by concatenating the Example 2 and Example 3 blocks. That pairing is
+structurally faithful (LHR→HND outbound, HND→LCY return) and exercises the
+differing-price branch. It is labelled synthetic in the fixture file. If a
+real two-block paste turns up it replaces the fixture with no parser change;
+if it turns out none exists, the tolerance costs nothing.
 
 ## Testing
 
@@ -256,15 +293,26 @@ Unit tests, all with a pinned reference date where dates are involved:
   marker, `Premium economy` versus `Economy`, and the ` Passenger` strip.
 - `_infer_year` across a weekday match, a year rollover, and the no-match
   fallback.
-- Place-name resolution on both tiers: a mapped airport (HND, FCO) and an
-  unmapped one falling through to the stripped name, including LHR rendering
-  as `Heathrow` rather than `London`.
-- `detect_format` returning `"google_flights"` for all four Google samples and
+- Place-name resolution on all three tiers: a mapped airport (HND, FCO), a
+  layover-sourced one (KIX to `Osaka`), and an unmapped non-layover falling
+  through to the stripped name, including LHR rendering as `Heathrow` rather
+  than `London`.
+- `+N` held flat across two layovers in the STN→HND sample, asserting the
+  third segment lands on Aug 27 rather than Aug 28.
+- `detect_format` returning `"google_flights"` for all five Google samples and
   the existing values for the existing fixtures.
 
 End-to-end YAML fixtures following the existing `input_text_block_file`
-convention: the three original examples, the departure-only round-trip-priced
-paste, and the synthesized round trip.
+convention, one per supplied sample plus the synthesized round trip:
+
+| Fixture | Sample | Covers |
+|---|---|---|
+| `test-case-gf-1` | LHR→BIQ via GVA | one stop, single airline |
+| `test-case-gf-2` | LHR→HND nonstop | nonstop, overnight, arrival weekday prefix |
+| `test-case-gf-3` | HND→LCY via FCO, LIN | a `Return` slice, timezone-crossing final leg |
+| `test-case-gf-4` | LHR→FCO nonstop | tree-absorption noise line, negative emissions sign |
+| `test-case-gf-5` | STN→HND via IST, KIX | mixed airlines, blank lines, flat `+1`, layover-sourced KIX |
+| `test-case-gf-rt` | gf-2 + gf-3 concatenated | two slices, differing prices (synthetic) |
 
 The 32 existing tests must stay green in count and intent, but 10 of them pin
 byte-exact output and will need regenerating for the source qualifier and the
