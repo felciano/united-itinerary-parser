@@ -47,7 +47,7 @@ Google Flights:
 
 ```
 - Google Flights itinerary: £1,387 round trip.
-  - London Stansted (STN) to Tokyo (HND) (via Istanbul (IST), Osaka (KIX)):
+  - London Stansted (STN) to Tokyo Haneda (HND) (via Istanbul (IST), Osaka (KIX)):
     - STN > IST TK 1246: dep STN Wed Aug 26, 6:15 am, arr IST 12:10 pm (Economy, Boeing 737).
     - IST > KIX TK 86: dep IST Thu Aug 27, 2:25 am, arr KIX 7:05 pm (Economy, Boeing 787).
     - KIX > HND NH 98: dep KIX Thu Aug 27, 9:00 pm, arr HND 10:20 pm (Economy, Boeing 737).

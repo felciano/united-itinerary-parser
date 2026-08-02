@@ -182,9 +182,15 @@ def _clean_gf_aircraft(raw):
 # Flights name reads poorly as a label AND which no layover line names.
 # LHR is deliberately absent -- 'Heathrow' beats 'London', and a London
 # round trip out of LHR into LCY must keep its endpoints distinct.
+#
+# Where a city has more than one airport, the label carries both, the way
+# Google's own 'London Stansted' / 'London City' names already do. Tokyo
+# needs this: mapping both HND and NRT to a bare 'Tokyo' would make two
+# genuinely different options look identical when comparing them.
 _IATA_CITY = {
-    "HND": "Tokyo",   # "Haneda Airport"
-    "FCO": "Rome",    # "Leonardo da Vinci International Airport"
+    "HND": "Tokyo Haneda",  # "Haneda Airport"
+    "NRT": "Tokyo Narita",  # "Narita International Airport"
+    "FCO": "Rome",          # "Leonardo da Vinci International Airport"
 }
 
 

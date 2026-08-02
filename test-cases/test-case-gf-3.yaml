@@ -2,7 +2,7 @@
   input_text_block_file: "test-case-gf-3-input.txt"
   expected_summary: |
     - Google Flights itinerary: £1,355 round trip.
-      - Tokyo (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):
+      - Tokyo Haneda (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):
         - HND > FCO AZ 793: dep HND Sun Aug 30, 12:40 pm, arr FCO 8:25 pm (Economy, Airbus A350).
         - FCO > LIN AZ 2010: dep FCO Mon Aug 31, 7:00 am, arr LIN 8:10 am (Economy, Airbus A220-300).
         - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).

@@ -5,9 +5,24 @@ import parse as parser
 
 
 def test_tier_one_curated_map_wins():
-    assert parser._resolve_place_name("HND", "Haneda Airport", {}) == "Tokyo"
+    assert parser._resolve_place_name("HND", "Haneda Airport", {}) == "Tokyo Haneda"
     assert parser._resolve_place_name(
         "FCO", "Leonardo da Vinci International Airport", {}) == "Rome"
+
+
+def test_multi_airport_cities_stay_distinguishable():
+    """Both Tokyo airports carry the city AND the airport, so comparing an
+    HND option against an NRT one does not show two identical labels."""
+    assert parser._resolve_place_name("HND", "Haneda Airport", {}) == "Tokyo Haneda"
+    assert parser._resolve_place_name(
+        "NRT", "Narita International Airport", {}) == "Tokyo Narita"
+
+
+def test_curated_map_beats_a_layover_city_for_multi_airport_cities():
+    """A layover line saying bare 'Tokyo' must not flatten NRT's label."""
+    resolved = parser._resolve_place_name(
+        "NRT", "Narita International Airport", {"NRT": "Tokyo"})
+    assert resolved == "Tokyo Narita"
 
 
 def test_tier_one_beats_a_conflicting_layover_city():

@@ -35,7 +35,7 @@ def test_airports_and_resolved_city_names():
     assert segments[0].dep_city == "London Stansted"
     assert segments[1].arr_airport == "KIX"
     assert segments[1].arr_city == "Osaka"       # tier 2, from a layover line
-    assert segments[2].arr_city == "Tokyo"       # tier 1, curated map
+    assert segments[2].arr_city == "Tokyo Haneda"       # tier 1, curated map
 
 
 def test_day_offset_counts_from_the_slice_date_not_cumulatively():

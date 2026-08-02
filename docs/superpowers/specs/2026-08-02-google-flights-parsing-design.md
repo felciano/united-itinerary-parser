@@ -122,14 +122,22 @@ paste gives no other way to name, and it is extended by hand as cases surface:
 
 ```python
 _IATA_CITY = {
-    "HND": "Tokyo",   # "Haneda Airport"
-    "FCO": "Rome",    # "Leonardo da Vinci International Airport"
+    "HND": "Tokyo Haneda",  # "Haneda Airport"
+    "NRT": "Tokyo Narita",  # "Narita International Airport"
+    "FCO": "Rome",          # "Leonardo da Vinci International Airport"
 }
 ```
 
 LHR is deliberately absent. `Heathrow` reads better than `London`, and on a
 London round trip out of LHR and back into LCY, mapping both to `London` would
 collapse the distinction between the endpoints.
+
+Where a city has more than one airport, the label carries both, mirroring the
+`London Stansted` / `London City` names Google already prints. Tokyo forced
+this: NRT initially fell through to `Narita International` while HND mapped to
+a bare `Tokyo`, so the same city read two different ways. Mapping both to
+`Tokyo` would have been worse — comparing an HND option against an NRT one is
+a normal thing to do, and the two would have become visually identical.
 
 Tier 2 keeps the map small. `Kansai International Airport (KIX)` strips to
 `Kansai International`, but the same paste carries `1 hr 55 min layoverOsaka
@@ -154,7 +162,8 @@ Resulting labels:
 | IST | Istanbul Airport | `Istanbul` | stripped (layover agrees) |
 | LIN | Milan Linate Airport | `Milan` / `Milan Linate` | layover / stripped |
 | KIX | Kansai International Airport | `Osaka` | layover |
-| HND | Haneda Airport | `Tokyo` | map |
+| HND | Haneda Airport | `Tokyo Haneda` | map |
+| NRT | Narita International Airport | `Tokyo Narita` | map |
 | FCO | Leonardo da Vinci International Airport | `Rome` | map |
 
 This resolution applies to the Google Flights path only. The email and
@@ -251,7 +260,7 @@ Example 2 (nonstop, overnight, crosses midnight):
 
 ```
 - Google Flights itinerary: £1,497 round trip.
-  - Heathrow (LHR) to Tokyo (HND):
+  - Heathrow (LHR) to Tokyo Haneda (HND):
     - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
 ```
 
@@ -260,7 +269,7 @@ final leg):
 
 ```
 - Google Flights itinerary: £1,355 round trip.
-  - Tokyo (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):
+  - Tokyo Haneda (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):
     - HND > FCO AZ 793: dep HND Sun Aug 30, 12:40 pm, arr FCO 8:25 pm (Economy, Airbus A350).
     - FCO > LIN AZ 2010: dep FCO Mon Aug 31, 7:00 am, arr LIN 8:10 am (Economy, Airbus A220-300).
     - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).
@@ -271,7 +280,7 @@ across two layovers, and a layover-sourced city name at KIX):
 
 ```
 - Google Flights itinerary: £1,387 round trip.
-  - London Stansted (STN) to Tokyo (HND) (via Istanbul (IST), Osaka (KIX)):
+  - London Stansted (STN) to Tokyo Haneda (HND) (via Istanbul (IST), Osaka (KIX)):
     - STN > IST TK 1246: dep STN Wed Aug 26, 6:15 am, arr IST 12:10 pm (Economy, Boeing 737).
     - IST > KIX TK 86: dep IST Thu Aug 27, 2:25 am, arr KIX 7:05 pm (Economy, Boeing 787).
     - KIX > HND NH 98: dep KIX Thu Aug 27, 9:00 pm, arr HND 10:20 pm (Economy, Boeing 737).

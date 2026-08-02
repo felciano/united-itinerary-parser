@@ -2,5 +2,5 @@
   input_text_block_file: "test-case-gf-2-input.txt"
   expected_summary: |
     - Google Flights itinerary: £1,497 round trip.
-      - Heathrow (LHR) to Tokyo (HND):
+      - Heathrow (LHR) to Tokyo Haneda (HND):
         - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
