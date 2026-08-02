@@ -350,6 +350,29 @@ def parse_google_flights(text, reference_date=None):
     )
 
 
+def _render_itinerary_header_google_flights(it):
+    """Header line: '- Google Flights itinerary: £1,387 round trip.'"""
+    line = f"- {_SOURCE_LABEL['google_flights']} itinerary:"
+    trailing = []
+    if it.total_cost is not None:
+        trailing.append(_fmt_money(it.total_cost, it.currency))
+    if it.trip_type:
+        trailing.append(it.trip_type)
+    if not trailing:
+        return line
+    return f"{line} {' '.join(trailing)}."
+
+
+def render_google_flights(it):
+    """Render a Google Flights Itinerary as nested bullets."""
+    lines = [_render_itinerary_header_google_flights(it)]
+    for chunk in it.chunks:
+        lines.append(_render_chunk_header_email(chunk))
+        for seg in chunk.segments:
+            lines.append(_render_segment_line_google_flights(seg))
+    return "\n".join(lines)
+
+
 # --- Email parser ---------------------------------------------------------
 
 _EMAIL_FLIGHT_HEADER = re.compile(
