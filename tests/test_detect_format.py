@@ -35,3 +35,25 @@ def test_reservation_ui_original_detects_as_reservation_ui():
 
 def test_empty_text_detects_as_unknown():
     assert parser.detect_format("") == "unknown"
+
+
+def test_google_flights_sample_detects_as_google_flights():
+    text = _read("test-case-gf-5-input.txt")
+    assert parser.detect_format(text) == "google_flights"
+
+
+def test_google_flights_does_not_shadow_email():
+    text = _read("test-case-email-FQZ1B5-popclip-input.txt")
+    assert parser.detect_format(text) == "email"
+
+
+def test_google_flights_does_not_shadow_reservation_ui():
+    text = _read("test-case-6-popclip-input.txt")
+    assert parser.detect_format(text) == "reservation_ui"
+
+
+def test_end_to_end_dispatch_to_google_flights():
+    from datetime import date
+    text = _read("test-case-gf-5-input.txt")
+    result = parser.parse_united_itinerary(text, reference_date=date(2026, 8, 2))
+    assert result.startswith("- Google Flights itinerary: £1,387 round trip.")

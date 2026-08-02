@@ -89,7 +89,11 @@ def group_into_chunks(segments):
 
 
 def detect_format(text):
-    """Classify the input text as 'email', 'reservation_ui', or 'unknown'.
+    """Classify the input as 'google_flights', 'email', 'reservation_ui',
+    or 'unknown'.
+
+    Google Flights signatures: both 'Travel time:' and 'kg CO2e' appear.
+    Checked first, since it takes precedence over the other two.
 
     Email signatures: both 'Thank you for choosing United' and
     'Confirmation Number:' appear (the combination rarely occurs
@@ -98,9 +102,11 @@ def detect_format(text):
     Reservation-UI signatures: any of 'Flight selection list',
     'Aircraft type:', or 'Duration:' appears.
 
-    If both match, email wins (more specific). If neither matches,
-    returns 'unknown'.
+    If google_flights matches, it wins. Otherwise, if email matches, it
+    wins (more specific than reservation-UI). If none match, returns
+    'unknown'.
     """
+    is_google_flights = "Travel time:" in text and "kg CO2e" in text
     is_email = (
         "Thank you for choosing United" in text
         and "Confirmation Number:" in text
@@ -110,6 +116,8 @@ def detect_format(text):
         or "Aircraft type:" in text
         or "Duration:" in text
     )
+    if is_google_flights:
+        return "google_flights"
     if is_email:
         return "email"
     if is_reservation_ui:
@@ -1020,17 +1028,26 @@ def parse_original_format(text):
     return output
 
 
-def parse_united_itinerary(text):
-    """Convert a United itinerary to a terse summary.
+def parse_united_itinerary(text, reference_date=None):
+    """Convert an itinerary to a terse summary.
 
-    Handles three input sources:
+    Handles four input sources:
+    - Google Flights web UI pastes (via parse_google_flights)
     - United eTicket/Receipt emails (via parse_email + render_email)
     - Reservation-UI text in PopClip format (bullet separators)
     - Reservation-UI text in original markdown format
+
+    `reference_date` resolves the year of Google Flights dates, which omit
+    it. Defaults to today; tests pin it so fixtures stay deterministic.
     """
 
-    # Email input takes priority — handle first with the dataclass pipeline.
-    if detect_format(text) == "email":
+    fmt = detect_format(text)
+
+    if fmt == "google_flights":
+        itinerary = parse_google_flights(text, reference_date=reference_date)
+        return render_google_flights(itinerary)
+
+    if fmt == "email":
         return render_email(parse_email(text))
 
     # Detect reservation-UI variant: PopClip format uses " • " separators
