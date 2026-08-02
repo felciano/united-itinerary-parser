@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
@@ -115,6 +115,41 @@ def detect_format(text):
     if is_reservation_ui:
         return "reservation_ui"
     return "unknown"
+
+
+# --- Google Flights parser -----------------------------------------------
+
+_WEEKDAY_NUM = {
+    "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6,
+}
+
+# A month/day returns to the same weekday on an irregular 5-, 6- or 11-year
+# cycle, so the window has to clear 11 (Wed Aug 26 is 2026, then 2037).
+_YEAR_SEARCH_WINDOW = 12
+
+
+def _infer_year(month, day, weekday, reference):
+    """Infer the year of a Google Flights date, which omits it.
+
+    Returns the year of the first date on or after `reference` matching
+    `month`/`day` whose weekday agrees with `weekday`. When no weekday
+    matches — or `weekday` is unrecognized — returns the year of the
+    earliest candidate on or after `reference`.
+    """
+    target = _WEEKDAY_NUM.get(weekday)
+    fallback = None
+    for year in range(reference.year, reference.year + _YEAR_SEARCH_WINDOW):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            continue  # Feb 29 in a non-leap year
+        if candidate < reference:
+            continue
+        if fallback is None:
+            fallback = year
+        if target is None or candidate.weekday() == target:
+            return year
+    return fallback if fallback is not None else reference.year
 
 
 # --- Email parser ---------------------------------------------------------
