@@ -94,12 +94,15 @@ would miss it and fall back to the wrong year, changing the rendered weekday.
 **`reference_date` must be threaded all the way to `parse_united_itinerary`.**
 Defaulting to `date.today()` inside `parse_google_flights` is not enough,
 because the end-to-end fixtures call `parse_united_itinerary` and would then
-depend on the wall clock. Run in 2027, `Wed, Aug 26` finds no Wednesday within
-any reasonable window starting that year, falls back to 2027, and renders
-`Thu` — a fixture that passes today and fails next year. So
-`parse_united_itinerary(text, reference_date=None)` and
-`parse_google_flights(text, reference_date=None)` both take the parameter,
-default to `date.today()`, and the fixtures pin it to `date(2026, 8, 2)`.
+depend on the wall clock. The inferred year genuinely shifts with when the
+suite runs — `Wed, Aug 26` resolves to 2026 today but to 2037 if run in
+2027, per the 12-year window above — so pinning the reference date keeps
+the fixtures deterministic and makes the intended year explicit, even
+though the renderer never prints the year, so the rendered text happens to
+be stable either way. So `parse_united_itinerary(text, reference_date=None)`
+and `parse_google_flights(text, reference_date=None)` both take the
+parameter, default to `date.today()`, and the fixtures pin it to
+`date(2026, 8, 2)`.
 
 For a round trip, the Return slice resolves forward from the Departure date
 rather than from the reference, which handles a December-to-January crossing.

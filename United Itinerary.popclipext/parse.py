@@ -35,7 +35,7 @@ class Chunk:
 
 @dataclass
 class Itinerary:
-    source: str  # "reservation_ui" | "email"
+    source: str  # "reservation_ui" | "email" | "google_flights"
     chunks: list = field(default_factory=list)
     total_cost: Optional[Decimal] = None
     miles: Optional[int] = None
@@ -236,7 +236,10 @@ def _gf_slice_base_date(block, not_before):
         if month is None:
             return None
         year = _infer_year(month, int(day), weekday, not_before)
-        return date(year, month, int(day))
+        try:
+            return date(year, month, int(day))
+        except ValueError:
+            return None
     return None
 
 
@@ -1045,10 +1048,15 @@ def parse_united_itinerary(text, reference_date=None):
 
     if fmt == "google_flights":
         itinerary = parse_google_flights(text, reference_date=reference_date)
+        if not itinerary.chunks:
+            return ""
         return render_google_flights(itinerary)
 
     if fmt == "email":
-        return render_email(parse_email(text))
+        itinerary = parse_email(text)
+        if not itinerary.chunks:
+            return ""
+        return render_email(itinerary)
 
     # Detect reservation-UI variant: PopClip format uses " • " separators
     if " • " in text:

@@ -9,9 +9,12 @@ from tests.conftest import load_yaml_case
 
 import parse as parser
 
-# Pinned so year inference is deterministic. Without this the fixtures
-# would depend on the wall clock: run in 2027, "Wed, Aug 26" finds no
-# matching Wednesday nearby and renders the wrong weekday.
+# Pinned so year inference is deterministic. The inferred year genuinely
+# shifts with the wall clock -- e.g. "Wed, Aug 26" resolves to 2026 if run
+# today but 2037 if run in 2027 -- so pinning keeps the fixtures
+# deterministic and makes the intended year explicit, even though the
+# renderer never prints the year, so the rendered text happens to be
+# stable either way.
 REF = date(2026, 8, 2)
 
 

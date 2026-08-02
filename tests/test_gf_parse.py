@@ -83,3 +83,25 @@ def test_two_slices_yield_two_chunks_and_the_last_price():
 
 def test_no_slice_header_yields_no_chunks():
     assert parser.parse_google_flights("nothing here", reference_date=REF).chunks == []
+
+
+def test_impossible_date_is_skipped_not_raised():
+    """A mangled paste must not raise a traceback at the user."""
+    text = (
+        "Departure\nMon, Apr 31\n£100\nround trip\n"
+        "6:15 AMHeathrow Airport (LHR)\n"
+        "Travel time: 1 hr\n"
+        "7:15 AMGeneva Airport (GVA)\n"
+        "SWISSEconomyAirbus A220-300 PassengerLX 1\n"
+    )
+    it = parser.parse_google_flights(text, reference_date=REF)
+    assert it.chunks == []
+
+
+def test_slice_header_without_segments_renders_nothing():
+    text = "Departure\nWed, Aug 26\n£251\nround trip\n"
+    assert parser.parse_united_itinerary(text, reference_date=REF) == ""
+
+
+def test_unparseable_text_renders_nothing():
+    assert parser.parse_united_itinerary("Travel time: kg CO2e") == ""

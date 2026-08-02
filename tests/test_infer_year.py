@@ -24,8 +24,10 @@ def test_rolls_into_next_year_when_date_already_passed():
 
 
 def test_spans_an_eleven_year_gap():
-    # Aug 26 is Wednesday in 2026, then not again until 2037
-    assert parser._infer_year(8, 26, "Wed", date(2027, 1, 1)) == 2037
+    # Aug 26 is Wednesday in 2026, then not again until 2037. Reference is
+    # one day after the 2026 Wednesday, so 2026 is excluded and the search
+    # must reach 2037 -- requiring the full 12-year window.
+    assert parser._infer_year(8, 26, "Wed", date(2026, 8, 27)) == 2037
 
 
 def test_unknown_weekday_falls_back_to_first_candidate():
