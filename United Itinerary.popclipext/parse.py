@@ -197,6 +197,159 @@ def _resolve_place_name(iata, airport_name, layover_cities):
     return re.sub(r"\s+Airport$", "", airport_name.strip())
 
 
+_MONTH_ABBR = {
+    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+}
+_GF_TRIP_TYPES = ("round trip", "one way")
+
+
+def _parse_gf_slices(text):
+    """Split a paste into one block per Departure/Return header."""
+    lines = text.splitlines()
+    starts = [
+        i for i, line in enumerate(lines)
+        if _GF_SLICE_HEADER.match(line.strip())
+    ]
+    return [
+        "\n".join(lines[start:(starts[i + 1] if i + 1 < len(starts) else len(lines))])
+        for i, start in enumerate(starts)
+    ]
+
+
+def _gf_slice_base_date(block, not_before):
+    """Read the slice's date line and resolve its year forward."""
+    for line in block.splitlines():
+        match = _GF_SLICE_DATE.match(line.strip())
+        if not match:
+            continue
+        weekday, month_abbr, day = match.groups()
+        month = _MONTH_ABBR.get(month_abbr)
+        if month is None:
+            return None
+        year = _infer_year(month, int(day), weekday, not_before)
+        return date(year, month, int(day))
+    return None
+
+
+def _gf_slice_header_lines(block):
+    """Lines before the first segment, where price and trip type live."""
+    header = []
+    for line in block.splitlines():
+        if _GF_TIME_AIRPORT.match(line.strip()):
+            break
+        header.append(line.strip())
+    return header
+
+
+def _gf_slice_price(block):
+    """Return (currency_symbol, amount) for the slice, or (None, None)."""
+    for line in _gf_slice_header_lines(block):
+        match = _GF_PRICE.match(line)
+        if match:
+            symbol = match.group(1).strip()
+            amount = Decimal(match.group(2).replace(",", ""))
+            return symbol, amount
+    return None, None
+
+
+def _gf_slice_trip_type(block):
+    """Return 'round trip' / 'one way' as printed, or None."""
+    for line in _gf_slice_header_lines(block):
+        if line in _GF_TRIP_TYPES:
+            return line
+    return None
+
+
+def _parse_gf_segments(block, base_date, layover_cities):
+    """Parse one slice into Segments.
+
+    Time+airport lines arrive in departure/arrival pairs; the airline line
+    that follows a pair closes the segment. Everything else is noise and is
+    skipped by not matching an anchor.
+    """
+    segments = []
+    pending = []
+    for raw in block.splitlines():
+        line = raw.strip()
+        stop = _GF_TIME_AIRPORT.match(line)
+        if stop:
+            pending.append(_gf_stop(stop, base_date))
+            continue
+        flight = _GF_FLIGHT.match(line)
+        if flight and len(pending) >= 2:
+            segments.append(
+                _gf_segment(flight, pending[-2], pending[-1], layover_cities)
+            )
+            pending = []
+    return segments
+
+
+def _gf_stop(match, base_date):
+    """Turn a time+airport match into (datetime, airport_name, iata)."""
+    hour, minute, meridiem, offset, name, iata = match.groups()
+    hh, mm = _to_24h(int(hour), int(minute), meridiem)
+    day = base_date + timedelta(days=int(offset or 0))
+    return datetime(day.year, day.month, day.day, hh, mm), name.strip(), iata
+
+
+def _gf_segment(flight, dep, arr, layover_cities):
+    """Build a Segment from a flight-line match and its two stops."""
+    _airline_name, cabin, aircraft, code, number = flight.groups()
+    return Segment(
+        flight_number=number,
+        airline=code,
+        dep_airport=dep[2],
+        dep_city=_resolve_place_name(dep[2], dep[1], layover_cities),
+        arr_airport=arr[2],
+        arr_city=_resolve_place_name(arr[2], arr[1], layover_cities),
+        dep_datetime=dep[0],
+        arr_datetime=arr[0],
+        fare_class=cabin,
+        aircraft=_clean_gf_aircraft(aircraft),
+    )
+
+
+def parse_google_flights(text, reference_date=None):
+    """Parse a Google Flights paste into an Itinerary.
+
+    Each Departure/Return slice becomes one Chunk. The price is taken from
+    the last slice that states one: identical slices collapse to the same
+    value, and differing slices resolve to the fully-selected combination.
+    """
+    reference = reference_date or date.today()
+    layover_cities = _harvest_layover_cities(text)
+
+    chunks = []
+    currency, total_cost, trip_type = "$", None, None
+    not_before = reference
+
+    for block in _parse_gf_slices(text):
+        base_date = _gf_slice_base_date(block, not_before)
+        if base_date is None:
+            continue
+        not_before = base_date
+        segments = _parse_gf_segments(block, base_date, layover_cities)
+        if not segments:
+            continue
+        chunks.append(Chunk(segments=segments))
+
+        symbol, amount = _gf_slice_price(block)
+        if amount is not None:
+            currency, total_cost = symbol, amount
+        slice_trip_type = _gf_slice_trip_type(block)
+        if slice_trip_type:
+            trip_type = slice_trip_type
+
+    return Itinerary(
+        source="google_flights",
+        chunks=chunks,
+        total_cost=total_cost,
+        currency=currency,
+        trip_type=trip_type,
+    )
+
+
 # --- Email parser ---------------------------------------------------------
 
 _EMAIL_FLIGHT_HEADER = re.compile(
