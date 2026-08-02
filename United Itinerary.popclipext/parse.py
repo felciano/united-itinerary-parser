@@ -24,6 +24,7 @@ class Segment:
     seat: Optional[str] = None
     aircraft: Optional[str] = None
     duration: Optional[timedelta] = None
+    airline: Optional[str] = None
 
 
 @dataclass
@@ -45,6 +46,8 @@ class Itinerary:
     accrual_award_miles: Optional[int] = None
     accrual_pqp: Optional[int] = None
     accrual_pqf: Optional[int] = None
+    currency: str = "$"
+    trip_type: Optional[str] = None
 
 
 CHUNK_GAP_THRESHOLD = timedelta(hours=24)
@@ -308,10 +311,10 @@ def _fmt_money(amount, symbol="$"):
     return f"{symbol}{whole:,}"
 
 
-def _render_segment_line_email(seg):
+def _render_segment_line(seg, extras):
+    """Render one segment line. `extras` become the parenthetical suffix."""
     dep_weekday = _WEEKDAY_SHORT[seg.dep_datetime.weekday()]
     dep_month = _MONTH_SHORT[seg.dep_datetime.month]
-    dep_day = seg.dep_datetime.day
     dep_time = _fmt_time_12h(seg.dep_datetime)
     arr_time = _fmt_time_12h(seg.arr_datetime)
 
@@ -319,18 +322,30 @@ def _render_segment_line_email(seg):
     if seg.arr_datetime.date() != seg.dep_datetime.date():
         arr_prefix = f" {_WEEKDAY_SHORT[seg.arr_datetime.weekday()]}"
 
+    extra_str = f" ({', '.join(extras)})" if extras else ""
+    airline = seg.airline or "UA"
+
+    return (
+        f"    - {seg.dep_airport} > {seg.arr_airport} "
+        f"{airline} {seg.flight_number}: "
+        f"dep {seg.dep_airport} {dep_weekday} {dep_month} "
+        f"{seg.dep_datetime.day}, {dep_time}, "
+        f"arr {seg.arr_airport}{arr_prefix} {arr_time}{extra_str}."
+    )
+
+
+def _render_segment_line_email(seg):
     extras = []
     if seg.fare_class:
         extras.append(seg.fare_class)
     if seg.seat:
         extras.append(f"seat {seg.seat}")
-    extra_str = f" ({', '.join(extras)})" if extras else ""
+    return _render_segment_line(seg, extras)
 
-    return (
-        f"    - {seg.dep_airport} > {seg.arr_airport} UA {seg.flight_number}: "
-        f"dep {seg.dep_airport} {dep_weekday} {dep_month} {dep_day}, {dep_time}, "
-        f"arr {seg.arr_airport}{arr_prefix} {arr_time}{extra_str}."
-    )
+
+def _render_segment_line_google_flights(seg):
+    extras = [value for value in (seg.fare_class, seg.aircraft) if value]
+    return _render_segment_line(seg, extras)
 
 
 def _render_chunk_header_email(chunk):
