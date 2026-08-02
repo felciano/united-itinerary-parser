@@ -83,12 +83,26 @@ explicitly, so each `Departure` / `Return` slice maps directly to one `Chunk`.
 
 The input carries no year but does carry a weekday. `_infer_year(month, day,
 weekday, reference)` searches forward from a reference date for the first
-matching date whose weekday agrees, capped at seven years, falling back to the
-reference year when nothing matches. The reference is an injectable parameter
-defaulting to `date.today()`, so tests pin it and stay deterministic.
+matching date whose weekday agrees, falling back to the earliest candidate
+on or after the reference when nothing matches.
+
+**The search window must be 12 years, not 7.** A given month/day returns to
+the same weekday on an irregular 5-, 6-, or 11-year cycle. `Wed, Aug 26` is
+2026, and the next Wednesday Aug 26 is 2037 — an 11-year gap. A 7-year window
+would miss it and fall back to the wrong year, changing the rendered weekday.
+
+**`reference_date` must be threaded all the way to `parse_united_itinerary`.**
+Defaulting to `date.today()` inside `parse_google_flights` is not enough,
+because the end-to-end fixtures call `parse_united_itinerary` and would then
+depend on the wall clock. Run in 2027, `Wed, Aug 26` finds no Wednesday within
+any reasonable window starting that year, falls back to 2027, and renders
+`Thu` — a fixture that passes today and fails next year. So
+`parse_united_itinerary(text, reference_date=None)` and
+`parse_google_flights(text, reference_date=None)` both take the parameter,
+default to `date.today()`, and the fixtures pin it to `date(2026, 8, 2)`.
 
 For a round trip, the Return slice resolves forward from the Departure date
-rather than from today, which handles a December-to-January crossing.
+rather than from the reference, which handles a December-to-January crossing.
 
 ### Place names
 
@@ -243,7 +257,7 @@ final leg):
 
 ```
 - Google Flights itinerary: £1,355 round trip.
-  - Tokyo (HND) to London City (LCY) (via Rome (FCO), Milan Linate (LIN)):
+  - Tokyo (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):
     - HND > FCO AZ 793: dep HND Sun Aug 30, 12:40 pm, arr FCO 8:25 pm (Economy, Airbus A350).
     - FCO > LIN AZ 2010: dep FCO Mon Aug 31, 7:00 am, arr LIN 8:10 am (Economy, Airbus A220-300).
     - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).
