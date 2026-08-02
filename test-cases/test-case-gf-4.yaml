@@ -1,0 +1,6 @@
+- description: "Google Flights: nonstop with tree-absorption prose and negative emissions"
+  input_text_block_file: "test-case-gf-4-input.txt"
+  expected_summary: |
+    - Google Flights itinerary: £251 round trip.
+      - Heathrow (LHR) to Rome (FCO):
+        - LHR > FCO AZ 203: dep LHR Wed Aug 26, 10:30 am, arr FCO 2:10 pm (Economy, Airbus A320neo).

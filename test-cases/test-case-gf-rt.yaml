@@ -1,0 +1,15 @@
+- description: >-
+    SYNTHETIC: gf-2 and gf-3 concatenated to exercise the two-slice path.
+    Every real paste supplied so far has been a single slice, so no genuine
+    Departure+Return copy was available. Structurally faithful (LHR>HND out,
+    HND>LCY back) and exercises the differing-price branch, where the last
+    slice's price wins. Replace with a real paste if one turns up.
+  input_text_block_file: "test-case-gf-rt-input.txt"
+  expected_summary: |
+    - Google Flights itinerary: £1,355 round trip.
+      - Heathrow (LHR) to Tokyo (HND):
+        - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
+      - Tokyo (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):
+        - HND > FCO AZ 793: dep HND Sun Aug 30, 12:40 pm, arr FCO 8:25 pm (Economy, Airbus A350).
+        - FCO > LIN AZ 2010: dep FCO Mon Aug 31, 7:00 am, arr LIN 8:10 am (Economy, Airbus A220-300).
+        - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).
