@@ -170,6 +170,33 @@ def _clean_gf_aircraft(raw):
     return re.sub(r"\s+Passenger$", "", raw.strip())
 
 
+# Curated exception list, not a derived rule: only airports whose Google
+# Flights name reads poorly as a label AND which no layover line names.
+# LHR is deliberately absent -- 'Heathrow' beats 'London', and a London
+# round trip out of LHR into LCY must keep its endpoints distinct.
+_IATA_CITY = {
+    "HND": "Tokyo",   # "Haneda Airport"
+    "FCO": "Rome",    # "Leonardo da Vinci International Airport"
+}
+
+
+def _harvest_layover_cities(text):
+    """Map IATA code to city name using every layover line in the paste."""
+    cities = {}
+    for match in _GF_LAYOVER.finditer(text):
+        cities.setdefault(match.group(2), match.group(1).strip())
+    return cities
+
+
+def _resolve_place_name(iata, airport_name, layover_cities):
+    """Resolve a chunk-header label for one airport."""
+    if iata in _IATA_CITY:
+        return _IATA_CITY[iata]
+    if iata in layover_cities:
+        return layover_cities[iata]
+    return re.sub(r"\s+Airport$", "", airport_name.strip())
+
+
 # --- Email parser ---------------------------------------------------------
 
 _EMAIL_FLIGHT_HEADER = re.compile(
