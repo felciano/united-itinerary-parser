@@ -1,0 +1,261 @@
+# Google Flights Itinerary Parsing — Design
+
+**Date:** 2026-08-02
+**Status:** Approved for planning
+
+## Goal
+
+Extend the parser to recognize itineraries copied from the Google Flights web
+UI, in addition to the two United sources it already handles. Add a source
+attribution to the rendered output of all three formats, and drop decimal
+places from all rendered prices.
+
+## Hard constraints
+
+`United Itinerary.popclipext/parse.py` must remain **a single file importing
+only the Python standard library**. PopClip is not the only caller — other
+macOS utilities shell out to it directly, so it has to run as a bare
+`python3 parse.py` against the system interpreter with no virtualenv and no
+install step. The file will grow past 1,000 lines; use section banners rather
+than splitting it. `pytest` and `PyYAML` stay dev-only in
+`[dependency-groups]` and are never imported by `parse.py`.
+
+`summarize-united-itinerary.py` is a symlink to `parse.py`, so `sys.path[0]`
+resolves to the repo root rather than the bundle directory. Sibling imports
+would break even if the single-file rule were relaxed.
+
+## Input format
+
+Google Flights paste is line-oriented, with adjacent field values concatenated
+without separators. Five line shapes carry all the signal. Everything else is
+ignored by not matching any anchor — this is deliberate, since the noise lines
+vary (legroom, Wi-Fi, in-seat power, on-demand video, contrail warming,
+emissions estimates, baggage and fare conditions, and prose such as
+`Avoids as much CO2e as 791 trees absorb in a day`).
+
+| Anchor | Example | Yields |
+|---|---|---|
+| Slice header | a line that is exactly `Departure` or `Return` | chunk boundary |
+| Slice date | `Wed, Aug 26` | weekday, month, day (no year) |
+| Price | `£251` then `round trip` on the next line | currency symbol, amount, trip type |
+| Time + airport | `5:15 PM+1Haneda Airport (HND)` | local time, day offset, airport name, IATA |
+| Travel time | `Travel time: 14 hr 15 minOvernight` | segment separator (value not stored) |
+| Airline / cabin / aircraft / flight | `SWISSEconomyAirbus A220-300 PassengerLX 355` | `LX`, `355`, `Economy`, `Airbus A220-300` |
+| Layover | `10 hr 35 min layoverRome (FCO)Long layover` | clean city name for the via-point |
+
+The airline line is parsed with one regex anchored at both ends: non-greedy
+airline name, then a cabin from `Premium economy|Economy|Business|First`
+(longest alternative first, so `Premium economy` is not shadowed by
+`Economy`), then aircraft, then a `XX NNN` flight designator at end of line.
+A trailing ` Passenger` is stripped from the aircraft, so
+`Airbus A220-300 Passenger` becomes `Airbus A220-300` while `Boeing 777` is
+left alone.
+
+The price line's trailing word (`round trip` / `one way`) describes the fare,
+not the paste. A departure-only paste of a round-trip search still says
+`round trip`. Mirror whatever text is present; omit the phrase if absent.
+
+### Local times cannot be arithmetic-derived
+
+Example 3's `LIN 3:05 PM → LCY 3:55 PM` covers a stated 1 hr 50 min of travel,
+because Milan and London are an hour apart. Arrival datetimes must therefore
+come from the printed local time plus the printed `+N` marker, never from
+adding the travel time to the departure. The `+N` offset is relative to the
+slice's base date, not to the previous segment: in Example 3 the third
+segment departs `3:05 PM+1`, one day after the `Sun, Aug 30` slice date, even
+though two layovers have elapsed.
+
+This is also why `group_into_chunks` must not be used for this format. Its
+24-hour rule would misgroup a layover longer than a day, and cross-timezone
+gap arithmetic is not meaningful here. Google Flights states the boundaries
+explicitly, so each `Departure` / `Return` slice maps directly to one `Chunk`.
+
+### Year inference
+
+The input carries no year but does carry a weekday. `_infer_year(month, day,
+weekday, reference)` searches forward from a reference date for the first
+matching date whose weekday agrees, capped at seven years, falling back to the
+reference year when nothing matches. The reference is an injectable parameter
+defaulting to `date.today()`, so tests pin it and stay deterministic.
+
+For a round trip, the Return slice resolves forward from the Departure date
+rather than from today, which handles a December-to-January crossing.
+
+### Place names
+
+Chunk headers resolve each airport's label in this order:
+
+1. A literal `_IATA_CITY` dict in `parse.py`, seeded with exactly the
+   airports appearing in the test fixtures — LHR, LCY, GVA, BIQ, HND, FCO,
+   LIN, EWR, PUJ, IAH, SFO, IAD — extended on demand as new pastes surface
+   gaps. Deliberately not an attempt at global coverage.
+2. The city name from a layover line elsewhere in the same paste.
+3. The airport name with a trailing ` Airport` stripped.
+
+The dict comes first for consistency: FCO must render as `Rome` whether it is
+a layover in one paste or the destination in another. Without it, the same
+airport reads as `Rome` in one output and `Leonardo da Vinci International` in
+the next.
+
+**Consequence:** the map replaces airport names with city names, so LHR
+renders as `London`, not `Heathrow`, and HND as `Tokyo`, not `Haneda`. This
+differs from the preview approved before the map was added. For a London round
+trip departing LHR and returning to LCY, both endpoints read `London`, with
+the IATA code carrying the distinction. If preserving the airport identity in
+the label matters more than cross-paste consistency, map LHR to `London
+Heathrow` and LCY to `London City` instead; the resolution order is unchanged
+either way.
+
+This resolution applies to the Google Flights path only. The email and
+reservation-UI sources already carry usable city names, and routing them
+through the map would churn their fixtures for no gain.
+
+## Changes affecting all three formats
+
+### Source attribution
+
+`Itinerary.source` already exists (`"reservation_ui"` | `"email"`) and gains
+`"google_flights"`. A module-level map drives the rendered label:
+
+```python
+_SOURCE_LABEL = {
+    "reservation_ui": "United.com",
+    "email": "United.com",
+    "google_flights": "Google Flights",
+}
+```
+
+It appears as a leading qualifier on the itinerary header line:
+
+- `- United.com itinerary: $3,248 + 62,500 miles`
+- `- United.com itinerary NLY82V: $557 (eTicket 0162379511080). …`
+- `- Google Flights itinerary: £251 round trip.`
+
+The eTicket email is labelled `United.com` even though it arrives by email.
+Two labels was the explicit request.
+
+Two construction sites change, both one-liners: `parse.py:344` in the
+dataclass-based email renderer, and `parse.py:788` in the legacy
+reservation-UI path. That legacy path builds its header as a raw string rather
+than going through `Itinerary`, so it reads the map by literal key. Converting
+it to use the dataclass is a refactor this feature does not need.
+
+### Prices lose their decimals
+
+All rendered prices drop to whole currency units, rounded half-up, across
+every source and currency. `$3,248.25` becomes `$3,248`; `$556.50` becomes
+`$557`; `$2,564.60 + $1,100.00 upgrades` becomes `$2,565 + $1,100 upgrades`.
+`_fmt_money` takes a currency symbol and formats with `,.0f` after quantizing
+with `ROUND_HALF_UP`.
+
+The reservation-UI path currently interpolates the regex match as a raw
+string, so it must parse to `Decimal` and reformat rather than passing the
+captured text through.
+
+## Data model deltas
+
+Small, and deliberately additive:
+
+- `Segment.airline: Optional[str]` — the two-letter code, e.g. `"LX"`.
+- `Itinerary.currency: str = "$"`.
+- `Itinerary.trip_type: Optional[str]` — mirrored `"round trip"` / `"one way"`.
+
+Cabin reuses the existing `fare_class` field; `"Economy"` renders identically
+to the email path's `"Economy V"`. Aircraft reuses the existing `aircraft`
+field. No new dataclass, and segment travel time is not stored, since nothing
+renders it.
+
+## New and modified functions
+
+New: `_parse_gf_slices`, `_parse_gf_segments`, `_infer_year`,
+`parse_google_flights`, `render_google_flights`,
+`_render_itinerary_header_google_flights`.
+
+Modified:
+
+- `detect_format` gains a `"google_flights"` branch, checked first, keyed on
+  the co-occurrence of `Travel time:` and `kg CO2e`. No overlap with the
+  existing signatures (`Duration:`, `Aircraft type:`, `Flight selection list`,
+  `Thank you for choosing United`), so the two existing paths are untouched.
+- `_render_segment_line_email` splits into a shared `_render_segment_line(seg,
+  extras)` core plus per-format extras lists. Email passes fare class and
+  seat; Google Flights passes cabin and aircraft. The hardcoded `"UA"` becomes
+  `seg.airline or "UA"`, which preserves email and reservation-UI output.
+- `_render_chunk_header_email` is reused unchanged.
+- `parse_united_itinerary` dispatches the new format before its existing
+  email check.
+
+## Rendered output
+
+Example 1 (one stop):
+
+```
+- Google Flights itinerary: £301 round trip.
+  - London (LHR) to Biarritz (BIQ) (via Geneva (GVA)):
+    - LHR > GVA LX 355: dep LHR Wed Aug 26, 2:25 pm, arr GVA 5:05 pm (Economy, Airbus A220-300).
+    - GVA > BIQ LX 2332: dep GVA Wed Aug 26, 6:30 pm, arr BIQ 7:50 pm (Economy, Airbus A220-300).
+```
+
+Example 2 (nonstop, overnight, crosses midnight):
+
+```
+- Google Flights itinerary: £1,497 round trip.
+  - London (LHR) to Tokyo (HND):
+    - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
+```
+
+Example 3 (two stops, `+1` rollovers, timezone-crossing final leg):
+
+```
+- Google Flights itinerary: £1,355 round trip.
+  - Tokyo (HND) to London (LCY) (via Rome (FCO), Milan (LIN)):
+    - HND > FCO AZ 793: dep HND Sun Aug 30, 12:40 pm, arr FCO 8:25 pm (Economy, Airbus A350).
+    - FCO > LIN AZ 2010: dep FCO Mon Aug 31, 7:00 am, arr LIN 8:10 am (Economy, Airbus A220-300).
+    - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).
+```
+
+Arrival carries a weekday prefix only when it falls on a different date from
+departure, matching existing email behaviour.
+
+## Round-trip handling
+
+A paste containing both a `Departure` and a `Return` block yields one
+`Itinerary` with two chunks. The price rule is tolerant of either observed
+behaviour: render once if both blocks state the same amount, otherwise take
+the last block's amount, since that reflects the fully selected combination.
+
+No genuine two-block paste was available when this spec was written. The
+round-trip fixture is synthesized by concatenating the Example 2 and Example 3
+blocks, which is structurally faithful (LHR→HND outbound, HND→LCY return) and
+exercises the differing-price branch. It is labelled synthetic in the fixture
+file. A real paste can replace it later without parser changes.
+
+## Testing
+
+Unit tests, all with a pinned reference date where dates are involved:
+
+- One per anchor regex, including the concatenated airline line, the `+N`
+  marker, `Premium economy` versus `Economy`, and the ` Passenger` strip.
+- `_infer_year` across a weekday match, a year rollover, and the no-match
+  fallback.
+- Place-name resolution across all three tiers of the precedence order.
+- `detect_format` returning `"google_flights"` for all four Google samples and
+  the existing values for the existing fixtures.
+
+End-to-end YAML fixtures following the existing `input_text_block_file`
+convention: the three original examples, the departure-only round-trip-priced
+paste, and the synthesized round trip.
+
+The 32 existing tests must stay green in count and intent, but 10 of them pin
+byte-exact output and will need regenerating for the source qualifier and the
+decimal change: 6 reservation-UI snapshots, 2 email YAML fixtures, and 2
+inline expected strings in `tests/test_render_email.py`. Each regenerated
+fixture gets diffed against its predecessor to confirm only the header prefix
+and the price precision moved.
+
+## Out of scope
+
+Emissions, contrail warming, legroom, Wi-Fi and amenity data are parsed past
+but not stored or rendered. Multiple competing candidates in one paste are not
+supported — one paste is one itinerary. Segment travel time is used as a
+structural anchor but not retained.
