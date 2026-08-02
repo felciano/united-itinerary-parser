@@ -78,6 +78,6 @@
     + 40,000 miles
 
   expected_summary: |
-    - Itinerary: $2,294.83 + 40,000 miles
+    - United.com itinerary: $2,295 + 40,000 miles
       - LHR > SFO UA 949: dep LHR Sat Jan 10, 1:45 pm, arr SFO 5:00 pm (nonstop, 11h15m, Boeing 777-200).
       - SFO > LHR UA 901: dep SFO Fri Jan 16, 12:50 pm, arr LHR Sat 7:25 am (nonstop, 10h35m, Boeing 777-200).

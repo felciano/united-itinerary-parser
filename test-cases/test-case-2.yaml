@@ -53,6 +53,6 @@
     $1,399.01  
     + 70 PlusPoints
   expected_summary: |
-    - Itinerary: $1,399.01 + 70 PlusPoints
+    - United.com itinerary: $1,399 + 70 PlusPoints
       - LHR > SFO UA 939: dep LHR Fri Apr 11, 4:15 pm, arr SFO 7:20 pm (nonstop, 11h5m, Boeing 777-200).
       - SFO > LHR UA 901: dep SFO Wed Apr 16, 12:55 pm, arr LHR Thu 7:25 am (nonstop, 10h30m, Boeing 777-200).

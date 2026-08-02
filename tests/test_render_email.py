@@ -9,12 +9,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TEST_CASES = REPO_ROOT / "test-cases"
 
 EXPECTED_NLY82V = """\
-- Itinerary NLY82V: $556.50 (eTicket 0162379511080). Accrual: 4,707 miles / 523 PQP / 1 PQF.
+- United.com itinerary NLY82V: $557 (eTicket 0162379511080). Accrual: 4,707 miles / 523 PQP / 1 PQF.
   - Washington (IAD) to London (LHR):
     - IAD > LHR UA 924: dep IAD Wed Mar 11, 11:15 pm, arr LHR Thu 10:50 am (Economy V, seat 35F)."""
 
 EXPECTED_FQZ1B5 = """\
-- Itinerary FQZ1B5: $2,564.60 + $1,100.00 upgrades (eTicket 0162389632983). Accrual: 21,510 miles / 2,151 PQP / 4 PQF.
+- United.com itinerary FQZ1B5: $2,565 + $1,100 upgrades (eTicket 0162389632983). Accrual: 21,510 miles / 2,151 PQP / 4 PQF.
   - London (LHR) to Punta Cana (PUJ) (via Newark (EWR)):
     - LHR > EWR UA 17: dep LHR Sun Apr 26, 10:25 am, arr EWR 1:20 pm (Economy W, seat 33K).
     - EWR > PUJ UA 1514: dep EWR Mon Apr 27, 8:11 am, arr PUJ 12:15 pm (Economy W, seat 09D).

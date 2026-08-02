@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
 
@@ -48,6 +48,12 @@ class Itinerary:
 
 
 CHUNK_GAP_THRESHOLD = timedelta(hours=24)
+
+_SOURCE_LABEL = {
+    "reservation_ui": "United.com",
+    "email": "United.com",
+    "google_flights": "Google Flights",
+}
 
 
 def group_into_chunks(segments):
@@ -296,9 +302,10 @@ def _fmt_time_12h(dt):
     return f"{hour}:{dt.minute:02d} {meridiem}"
 
 
-def _fmt_money(amount):
-    """Format as '$2,564.60'."""
-    return f"${amount:,.2f}"
+def _fmt_money(amount, symbol="$"):
+    """Format as '$2,565' — whole currency units, rounded half-up."""
+    whole = Decimal(amount).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return f"{symbol}{whole:,}"
 
 
 def _render_segment_line_email(seg):
@@ -341,7 +348,7 @@ def _render_chunk_header_email(chunk):
 
 
 def _render_itinerary_header_email(it):
-    parts = ["- Itinerary"]
+    parts = [f"- {_SOURCE_LABEL[it.source]} itinerary"]
     if it.confirmation_number:
         parts.append(f" {it.confirmation_number}")
     parts.append(":")
@@ -775,7 +782,8 @@ def parse_united_itinerary(text):
 
     cost_parts = []
     if cost_match:
-        cost_parts.append(f"${cost_match.group(1)}")
+        raw = cost_match.group(1).replace(',', '')
+        cost_parts.append(_fmt_money(Decimal(raw)))
     if miles_match:
         miles_int = int(miles_match.group(1).replace(',', ''))
         cost_parts.append(f"{miles_int:,} miles")
@@ -785,7 +793,7 @@ def parse_united_itinerary(text):
 
     # Add Itinerary header at the top with cost info
     if output:
-        header = "- Itinerary:"
+        header = f"- {_SOURCE_LABEL['reservation_ui']} itinerary:"
         if cost_parts:
             header += " " + " + ".join(cost_parts)
         output.insert(0, header)
