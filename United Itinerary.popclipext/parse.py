@@ -152,6 +152,24 @@ def _infer_year(month, day, weekday, reference):
     return fallback if fallback is not None else reference.year
 
 
+_GF_SLICE_HEADER = re.compile(r"^(Departure|Return)$")
+_GF_SLICE_DATE = re.compile(r"^([A-Z][a-z]{2}),\s*([A-Z][a-z]{2})\s+(\d{1,2})$")
+_GF_PRICE = re.compile(r"^(\D{1,3}?)\s*([\d,]+(?:\.\d{2})?)$")
+_GF_TIME_AIRPORT = re.compile(
+    r"^(\d{1,2}):(\d{2})\s*([AP]M)(?:\+(\d+))?(.+?)\s*\(([A-Z]{3})\)$"
+)
+_GF_FLIGHT = re.compile(
+    r"^(.+?)(Premium economy|Economy|Business|First)(.*?)"
+    r"([A-Z0-9]{2})\s(\d{1,4})$"
+)
+_GF_LAYOVER = re.compile(r"layover(.+?)\s*\(([A-Z]{3})\)")
+
+
+def _clean_gf_aircraft(raw):
+    """Strip the trailing ' Passenger' Google appends to some airframes."""
+    return re.sub(r"\s+Passenger$", "", raw.strip())
+
+
 # --- Email parser ---------------------------------------------------------
 
 _EMAIL_FLIGHT_HEADER = re.compile(
