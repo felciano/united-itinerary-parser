@@ -41,7 +41,7 @@ emissions estimates, baggage and fare conditions, and prose such as
 | Time + airport | `5:15 PM+1Haneda Airport (HND)` | local time, day offset, airport name, IATA |
 | Travel time | `Travel time: 14 hr 15 minOvernight` | segment separator (value not stored) |
 | Airline / cabin / aircraft / flight | `SWISSEconomyAirbus A220-300 PassengerLX 355` | `LX`, `355`, `Economy`, `Airbus A220-300` |
-| Layover | `10 hr 35 min layoverRome (FCO)Long layover` | clean city name for the via-point |
+| Layover | `10 hr 35 min layoverRome (FCO)Long layover` | segment separator (values not stored) |
 
 The airline line is parsed with one regex anchored at both ends: non-greedy
 airline name, then a cabin from `Premium economy|Economy|Business|First`
@@ -85,26 +85,44 @@ rather than from today, which handles a December-to-January crossing.
 
 Chunk headers resolve each airport's label in this order:
 
-1. A literal `_IATA_CITY` dict in `parse.py`, seeded with exactly the
-   airports appearing in the test fixtures — LHR, LCY, GVA, BIQ, HND, FCO,
-   LIN, EWR, PUJ, IAH, SFO, IAD — extended on demand as new pastes surface
-   gaps. Deliberately not an attempt at global coverage.
-2. The city name from a layover line elsewhere in the same paste.
-3. The airport name with a trailing ` Airport` stripped.
+1. A literal `_IATA_CITY` dict in `parse.py`.
+2. The airport name with a trailing ` Airport` stripped.
 
-The dict comes first for consistency: FCO must render as `Rome` whether it is
-a layover in one paste or the destination in another. Without it, the same
-airport reads as `Rome` in one output and `Leonardo da Vinci International` in
-the next.
+The dict is a **curated exception list**, not a derived rule. It holds only
+those airports whose Google Flights name reads poorly as a label, and it is
+extended by hand as new pastes surface cases. Everything else falls through to
+the stripped name, which is correct for the large majority of airports because
+Google usually names them after their city.
 
-**Consequence:** the map replaces airport names with city names, so LHR
-renders as `London`, not `Heathrow`, and HND as `Tokyo`, not `Haneda`. This
-differs from the preview approved before the map was added. For a London round
-trip departing LHR and returning to LCY, both endpoints read `London`, with
-the IATA code carrying the distinction. If preserving the airport identity in
-the label matters more than cross-paste consistency, map LHR to `London
-Heathrow` and LCY to `London City` instead; the resolution order is unchanged
-either way.
+Seeded contents, covering every airport in the fixtures:
+
+```python
+_IATA_CITY = {
+    "HND": "Tokyo",   # "Haneda Airport"
+    "FCO": "Rome",    # "Leonardo da Vinci International Airport"
+}
+```
+
+Resulting labels:
+
+| IATA | Google Flights name | Renders as | Source |
+|---|---|---|---|
+| LHR | Heathrow Airport | `Heathrow` | stripped |
+| GVA | Geneva Airport | `Geneva` | stripped |
+| BIQ | Biarritz Airport | `Biarritz` | stripped |
+| LCY | London City Airport | `London City` | stripped |
+| LIN | Milan Linate Airport | `Milan Linate` | stripped |
+| HND | Haneda Airport | `Tokyo` | map |
+| FCO | Leonardo da Vinci International Airport | `Rome` | map |
+
+LHR is deliberately absent: `Heathrow` reads better than `London`, and on a
+London round trip out of LHR and back into LCY, mapping both to `London` would
+collapse the distinction between the endpoints.
+
+There is no tier sourcing city names from layover lines. It existed only to
+rescue FCO, which the map now handles, and keeping it would reintroduce
+inconsistency at LIN — layover lines say `Milan` while the stripped name says
+`Milan Linate`. Layover lines are structural anchors only.
 
 This resolution applies to the Google Flights path only. The email and
 reservation-UI sources already carry usable city names, and routing them
@@ -191,7 +209,7 @@ Example 1 (one stop):
 
 ```
 - Google Flights itinerary: £301 round trip.
-  - London (LHR) to Biarritz (BIQ) (via Geneva (GVA)):
+  - Heathrow (LHR) to Biarritz (BIQ) (via Geneva (GVA)):
     - LHR > GVA LX 355: dep LHR Wed Aug 26, 2:25 pm, arr GVA 5:05 pm (Economy, Airbus A220-300).
     - GVA > BIQ LX 2332: dep GVA Wed Aug 26, 6:30 pm, arr BIQ 7:50 pm (Economy, Airbus A220-300).
 ```
@@ -200,7 +218,7 @@ Example 2 (nonstop, overnight, crosses midnight):
 
 ```
 - Google Flights itinerary: £1,497 round trip.
-  - London (LHR) to Tokyo (HND):
+  - Heathrow (LHR) to Tokyo (HND):
     - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
 ```
 
@@ -208,7 +226,7 @@ Example 3 (two stops, `+1` rollovers, timezone-crossing final leg):
 
 ```
 - Google Flights itinerary: £1,355 round trip.
-  - Tokyo (HND) to London (LCY) (via Rome (FCO), Milan (LIN)):
+  - Tokyo (HND) to London City (LCY) (via Rome (FCO), Milan Linate (LIN)):
     - HND > FCO AZ 793: dep HND Sun Aug 30, 12:40 pm, arr FCO 8:25 pm (Economy, Airbus A350).
     - FCO > LIN AZ 2010: dep FCO Mon Aug 31, 7:00 am, arr LIN 8:10 am (Economy, Airbus A220-300).
     - LIN > LCY AZ 238: dep LIN Mon Aug 31, 3:05 pm, arr LCY 3:55 pm (Economy, Airbus A220-100).
@@ -238,7 +256,9 @@ Unit tests, all with a pinned reference date where dates are involved:
   marker, `Premium economy` versus `Economy`, and the ` Passenger` strip.
 - `_infer_year` across a weekday match, a year rollover, and the no-match
   fallback.
-- Place-name resolution across all three tiers of the precedence order.
+- Place-name resolution on both tiers: a mapped airport (HND, FCO) and an
+  unmapped one falling through to the stripped name, including LHR rendering
+  as `Heathrow` rather than `London`.
 - `detect_format` returning `"google_flights"` for all four Google samples and
   the existing values for the existing fixtures.
 
