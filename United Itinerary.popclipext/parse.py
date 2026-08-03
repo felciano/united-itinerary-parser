@@ -160,7 +160,15 @@ def _infer_year(month, day, weekday, reference):
     return fallback if fallback is not None else reference.year
 
 
-_GF_SLICE_HEADER = re.compile(r"^(Departure|Return)$")
+# Search results head their slices "Departure"/"Return"; once a trip is
+# selected the same slices are headed "Departing flight"/"Returning flight".
+_GF_SLICE_HEADER = re.compile(
+    r"^(Departing flight|Returning flight|Departure|Return)$"
+)
+_GF_SLICE_HEADER_PHRASES = (
+    r"(Departing flight|Returning flight|Departure|Return)"
+)
+_GF_CABINS = ("Premium economy", "Economy", "Business", "First")
 _GF_SLICE_DATE = re.compile(r"^([A-Z][a-z]{2}),\s*([A-Z][a-z]{2})\s+(\d{1,2})$")
 _GF_PRICE = re.compile(r"^(\D{1,3}?)\s*([\d,]+(?:\.\d{2})?)$")
 _GF_TIME_AIRPORT = re.compile(
@@ -246,7 +254,9 @@ def _normalize_gf_flattened(text):
     text = text.replace("\ufffc", "\n")  # image/button placeholder -> break
     text = text.replace("\u00b7", "")    # field separator within a row
 
-    text = re.sub(r"^(Departure|Return)", r"\1\n", text)
+    # Slice headers, wherever they fall. Removing the U+00B7 above glues a
+    # header to the date that followed it, so break on both sides.
+    text = re.sub(_GF_SLICE_HEADER_PHRASES, r"\n\1\n", text)
     # Consume the time rather than using a zero-width lookahead: a lookahead
     # matches at both "11:45" and "1:45" and would cut the hour in half.
     text = re.sub(r"(\d{1,2}:\d{2}\s*[AP]M)", r"\n\1", text)
@@ -259,6 +269,29 @@ def _normalize_gf_flattened(text):
     text = re.sub(r"([A-Z0-9]{2} \d{1,4})(?=[A-Za-z])", r"\1\n", text)
 
     return re.sub(r"\n{2,}", "\n", text)
+
+
+def _join_gf_flight_rows(text):
+    """Rejoin an airline block that Google split across three lines.
+
+    Search results render it concatenated —
+    `SWISSEconomyAirbus A220-300 PassengerLX 355` — but the selected-trip view
+    breaks the airline, cabin and aircraft onto separate lines. `_GF_FLIGHT`
+    needs them together, so merge any line that is nothing but a cabin word
+    with its neighbours.
+    """
+    lines = text.splitlines()
+    out = []
+    index = 0
+    while index < len(lines):
+        stripped = lines[index].strip()
+        if stripped in _GF_CABINS and out and index + 1 < len(lines):
+            out[-1] = out[-1].strip() + stripped + lines[index + 1].strip()
+            index += 2
+            continue
+        out.append(lines[index])
+        index += 1
+    return "\n".join(out)
 
 
 def _parse_gf_slices(text):
@@ -378,7 +411,7 @@ def parse_google_flights(text, reference_date=None):
     value, and differing slices resolve to the fully-selected combination.
     """
     reference = reference_date or date.today()
-    text = _normalize_gf_flattened(text)
+    text = _join_gf_flight_rows(_normalize_gf_flattened(text))
     layover_cities = _harvest_layover_cities(text)
 
     chunks = []
