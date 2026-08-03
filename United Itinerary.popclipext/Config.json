@@ -1,10 +1,11 @@
 {
   "name": "United Itinerary",
   "icon": "✈️",
+  "popclip version": 4035,
   "actions": [
     {
       "title": "Parse United Itinerary",
-      "shell script file": "parse.py",
+      "shell script file": "run.sh",
       "after": "copy-result",
       "requirements": []
     }

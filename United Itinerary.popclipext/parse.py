@@ -217,6 +217,49 @@ _MONTH_ABBR = {
 }
 _GF_TRIP_TYPES = ("round trip", "one way")
 
+# PopClip reads a selection through the macOS accessibility API rather than
+# the clipboard, and that flattens the whole result card into ONE line:
+# row breaks vanish, fields are joined by U+00B7, spaces before airport codes
+# and inside flight numbers become U+00A0, and images and buttons leave
+# U+FFFC behind. A clipboard copy of the same selection is properly line
+# broken, so this never shows up when testing by paste -- only in PopClip.
+_GF_FLAT_ROW_STARTS = (
+    r"(?<!\n)(?=Travel time:)",
+    r"(?<!\n)(?=\d+ hr(?: \d+ min)? layover)",
+    r"(?<!\n)(?=round trip|one way)",
+    # an explicit currency class, not a generic punctuation class: the latter
+    # matches the colon in 11:45 and cuts a time in half
+    r"(?<!\n)(?=[£$€¥₹₩]\s?[\d,]+)",
+)
+
+
+def _normalize_gf_flattened(text):
+    """Restore row breaks to a Google Flights selection captured by PopClip.
+
+    Returns `text` unchanged when it already contains newlines, so a normal
+    clipboard paste is untouched.
+    """
+    if "\n" in text.strip():
+        return text
+
+    text = text.replace("\u00a0", " ")   # NBSP -> plain space
+    text = text.replace("\ufffc", "\n")  # image/button placeholder -> break
+    text = text.replace("\u00b7", "")    # field separator within a row
+
+    text = re.sub(r"^(Departure|Return)", r"\1\n", text)
+    # Consume the time rather than using a zero-width lookahead: a lookahead
+    # matches at both "11:45" and "1:45" and would cut the hour in half.
+    text = re.sub(r"(\d{1,2}:\d{2}\s*[AP]M)", r"\n\1", text)
+    for pattern in _GF_FLAT_ROW_STARTS:
+        text = re.sub(pattern, "\n", text)
+    # a time+airport row ends at its IATA code
+    text = re.sub(r"(\([A-Z]{3}\))(?!\n)", r"\1\n", text)
+    # an airline row ends at its flight designator; trailing amenity text
+    # would otherwise sit on the same line and defeat _GF_FLIGHT's anchor
+    text = re.sub(r"([A-Z0-9]{2} \d{1,4})(?=[A-Za-z])", r"\1\n", text)
+
+    return re.sub(r"\n{2,}", "\n", text)
+
 
 def _parse_gf_slices(text):
     """Split a paste into one block per Departure/Return header."""
@@ -335,6 +378,7 @@ def parse_google_flights(text, reference_date=None):
     value, and differing slices resolve to the fully-selected combination.
     """
     reference = reference_date or date.today()
+    text = _normalize_gf_flattened(text)
     layover_cities = _harvest_layover_cities(text)
 
     chunks = []
