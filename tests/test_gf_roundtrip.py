@@ -20,7 +20,7 @@ TEST_CASES = REPO_ROOT / "test-cases"
 REF = date(2026, 8, 2)
 
 EXPECTED = """\
-- Google Flights itinerary:
+- Google Flights itinerary: LHR <-> BIQ, Wed Aug 26 - Sun Aug 30
   - Heathrow (LHR) to Biarritz (BIQ) (via Geneva (GVA)):
     - LHR > GVA LX 355: dep LHR Wed Aug 26, 2:25 pm, arr GVA 5:05 pm (Economy, Airbus A220-300).
     - GVA > BIQ LX 2332: dep GVA Wed Aug 26, 6:30 pm, arr BIQ 7:50 pm (Economy, Airbus A220-300).
@@ -78,8 +78,11 @@ def test_join_leaves_an_already_concatenated_block_alone():
     assert parser._join_gf_flight_rows(text) == text
 
 
-def test_no_price_yields_a_header_without_a_trailing_period():
-    """This view shows no fare, so the header must not end in a stray dot."""
+def test_header_omits_the_fare_when_none_is_shown():
+    """This capture has no preamble and states no fare, so the header carries
+    route and dates only — and never a trailing period."""
     result = parser.parse_united_itinerary(
         _read("test-case-gf-roundtrip-input.txt"), reference_date=REF)
-    assert result.splitlines()[0] == "- Google Flights itinerary:"
+    header = result.splitlines()[0]
+    assert header == "- Google Flights itinerary: LHR <-> BIQ, Wed Aug 26 - Sun Aug 30"
+    assert not header.endswith(".")

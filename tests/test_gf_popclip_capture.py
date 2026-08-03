@@ -17,7 +17,7 @@ TEST_CASES = REPO_ROOT / "test-cases"
 REF = date(2026, 8, 2)
 
 EXPECTED = """\
-- Google Flights itinerary: £1,193 round trip.
+- Google Flights itinerary: LHR > HND, Thu Aug 27, £1,193 round trip
   - Heathrow (LHR) to Tokyo Haneda (HND) (via New Delhi (DEL)):
     - LHR > DEL AI 2018: dep LHR Thu Aug 27, 8:35 pm, arr DEL Fri 11:45 am (Economy, Boeing 787).
     - DEL > HND AI 358: dep DEL Fri Aug 28, 6:20 pm, arr HND Sat 5:55 am (Economy, Boeing 787)."""

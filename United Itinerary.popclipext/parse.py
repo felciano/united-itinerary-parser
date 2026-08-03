@@ -506,16 +506,18 @@ def parse_google_flights(text, reference_date=None):
 
 
 def _render_itinerary_header_google_flights(it):
-    """Header line: '- Google Flights itinerary: £1,387 round trip.'"""
+    """Header: '- Google Flights itinerary: LHR <-> BIQ, Wed Aug 26 - Sun Aug 30, £400 round trip'."""
     line = f"- {_SOURCE_LABEL['google_flights']} itinerary:"
-    trailing = []
+    route, dates = _summarize_itinerary(it)
+
+    fare = []
     if it.total_cost is not None:
-        trailing.append(_fmt_money(it.total_cost, it.currency))
+        fare.append(_fmt_money(it.total_cost, it.currency))
     if it.trip_type:
-        trailing.append(it.trip_type)
-    if not trailing:
-        return line
-    return f"{line} {' '.join(trailing)}."
+        fare.append(it.trip_type)
+
+    parts = [part for part in (route, dates, " ".join(fare)) if part]
+    return f"{line} {', '.join(parts)}" if parts else line
 
 
 def render_google_flights(it):
@@ -716,6 +718,85 @@ def _fmt_time_12h(dt):
     return f"{hour}:{dt.minute:02d} {meridiem}"
 
 
+def _fmt_date_short(dt):
+    """Format as 'Wed Aug 26', matching the segment lines' date style."""
+    return f"{_WEEKDAY_SHORT[dt.weekday()]} {_MONTH_SHORT[dt.month]} {dt.day}"
+
+
+def _summarize_route(stops):
+    """Condense a trip's chunk endpoints into a route summary.
+
+    `stops` is the origin followed by each chunk's destination. A there-and-back
+    trip collapses to 'LHR <-> BIQ'; anything else chains with '>' so a
+    multi-city trip is not mistaken for a round trip.
+    """
+    if len(stops) < 2:
+        return None
+    if len(stops) == 3 and stops[0] == stops[-1]:
+        return f"{stops[0]} <-> {stops[1]}"
+    return " > ".join(stops)
+
+
+def _summarize_dates(first, last):
+    """'Wed Aug 26 - Sun Aug 30', or a single date when they coincide."""
+    if first is None:
+        return None
+    start = _fmt_date_short(first)
+    if last is None:
+        return start
+    end = _fmt_date_short(last)
+    return start if start == end else f"{start} - {end}"
+
+
+def _summarize_itinerary(it):
+    """Return (route, dates) for an Itinerary, or (None, None) if it is empty.
+
+    Departure dates bound the range: the first chunk's departure and the last
+    chunk's departure, which for a round trip reads as the outbound and return
+    dates rather than the moment the traveller gets home.
+    """
+    if not it.chunks:
+        return None, None
+    stops = [it.chunks[0].segments[0].dep_airport]
+    stops.extend(chunk.segments[-1].arr_airport for chunk in it.chunks)
+    return (
+        _summarize_route(stops),
+        _summarize_dates(
+            it.chunks[0].segments[0].dep_datetime,
+            it.chunks[-1].segments[0].dep_datetime,
+        ),
+    )
+
+
+# The reservation-UI parsers build their output as strings and never populate
+# the dataclasses, so the route and dates are recovered from the lines they
+# already emitted. Reworking those two ~120-line functions to carry structured
+# data would risk the six byte-exact snapshots that guard them, for no gain:
+# this format is ours, fixed, and fully covered by those same snapshots.
+_RES_UI_CHUNK = re.compile(
+    r"^\s*-\s+([A-Z]{3}(?: > [A-Z]{3})*)\s+[A-Z]{2}\s+\S+?:"
+    r"\s+dep\s+[A-Z]{3}\s+([A-Z][a-z]{2}\s+[A-Z][a-z]{2}\s+\d{1,2}),"
+)
+
+
+def _summarize_reservation_ui(lines):
+    """Return (route, dates) recovered from rendered reservation-UI lines."""
+    stops, dates = [], []
+    for line in lines:
+        match = _RES_UI_CHUNK.match(line)
+        if not match:
+            continue
+        airports = match.group(1).split(" > ")
+        if not stops:
+            stops.append(airports[0])
+        stops.append(airports[-1])
+        dates.append(match.group(2))
+    if not stops:
+        return None, None
+    date_range = dates[0] if dates[0] == dates[-1] else f"{dates[0]} - {dates[-1]}"
+    return _summarize_route(stops), date_range
+
+
 def _fmt_money(amount, symbol="$"):
     """Format as '$2,565' — whole currency units, rounded half-up."""
     whole = Decimal(amount).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
@@ -774,30 +855,35 @@ def _render_chunk_header_email(chunk):
 
 
 def _render_itinerary_header_email(it):
+    """Header: '- United.com itinerary NLY82V: IAD > LHR, Wed Mar 11, $557 (eTicket …)'."""
     parts = [f"- {_SOURCE_LABEL[it.source]} itinerary"]
     if it.confirmation_number:
         parts.append(f" {it.confirmation_number}")
     parts.append(":")
 
-    trailing = []
+    route, dates = _summarize_itinerary(it)
+
+    cost_piece = None
     if it.total_cost is not None:
         cost_piece = _fmt_money(it.total_cost)
         if it.upgrade_fees:
             cost_piece += f" + {_fmt_money(it.upgrade_fees)} upgrades"
-        trailing.append(cost_piece)
-    if it.eticket_number:
-        trailing.append(f"(eTicket {it.eticket_number})")
+
+    summary = [part for part in (route, dates, cost_piece) if part]
 
     line = "".join(parts)
-    if trailing:
-        line += " " + " ".join(trailing)
-        if not line.endswith("."):
-            line += "."
+    if summary:
+        line += " " + ", ".join(summary)
+    if it.eticket_number:
+        line += f" (eTicket {it.eticket_number})"
 
     if it.accrual_award_miles is not None:
+        # a sentence of its own, so the summary above needs closing first
+        if summary or it.eticket_number:
+            line += "."
         line += (
             f" Accrual: {it.accrual_award_miles:,} miles "
-            f"/ {it.accrual_pqp:,} PQP / {it.accrual_pqf} PQF."
+            f"/ {it.accrual_pqp:,} PQP / {it.accrual_pqf} PQF"
         )
 
     return line
@@ -1231,11 +1317,15 @@ def parse_united_itinerary(text, reference_date=None):
         points_int = int(plus_points_match.group(1).replace(',', ''))
         cost_parts.append(f"{points_int:,} PlusPoints")
 
-    # Add Itinerary header at the top with cost info
+    # Add Itinerary header at the top with route, dates and cost
     if output:
         header = f"- {_SOURCE_LABEL['reservation_ui']} itinerary:"
-        if cost_parts:
-            header += " " + " + ".join(cost_parts)
+        route, dates = _summarize_reservation_ui(output)
+        summary = [
+            part for part in (route, dates, " + ".join(cost_parts)) if part
+        ]
+        if summary:
+            header += " " + ", ".join(summary)
         output.insert(0, header)
 
     return "\n".join(output)

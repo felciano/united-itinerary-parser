@@ -6,7 +6,7 @@
     slice's price wins. Replace with a real paste if one turns up.
   input_text_block_file: "test-case-gf-rt-input.txt"
   expected_summary: |
-    - Google Flights itinerary: £1,355 round trip.
+    - Google Flights itinerary: LHR > HND > LCY, Wed Aug 26 - Sun Aug 30, £1,355 round trip
       - Heathrow (LHR) to Tokyo Haneda (HND):
         - LHR > HND NH 212: dep LHR Wed Aug 26, 7:00 pm, arr HND Thu 5:15 pm (Economy, Boeing 777).
       - Tokyo Haneda (HND) to London City (LCY) (via Rome (FCO), Milan (LIN)):

@@ -12,7 +12,7 @@ TEST_CASES = REPO_ROOT / "test-cases"
 REF = date(2026, 8, 2)
 
 EXPECTED_GF5 = """\
-- Google Flights itinerary: £1,387 round trip.
+- Google Flights itinerary: STN > HND, Wed Aug 26, £1,387 round trip
   - London Stansted (STN) to Tokyo Haneda (HND) (via Istanbul (IST), Osaka (KIX)):
     - STN > IST TK 1246: dep STN Wed Aug 26, 6:15 am, arr IST 12:10 pm (Economy, Boeing 737).
     - IST > KIX TK 86: dep IST Thu Aug 27, 2:25 am, arr KIX 7:05 pm (Economy, Boeing 787).
@@ -32,7 +32,9 @@ def test_header_without_price_or_trip_type():
 
 
 def test_header_with_price_only():
+    """No chunks means no route or dates to summarise, and the header carries
+    no trailing period."""
     it = parser.Itinerary(
         source="google_flights", total_cost=Decimal("301"), currency="£")
     assert parser._render_itinerary_header_google_flights(it) == (
-        "- Google Flights itinerary: £301.")
+        "- Google Flights itinerary: £301")

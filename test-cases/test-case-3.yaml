@@ -65,7 +65,7 @@
     $3,185.23  
     + 55,000 miles
   expected_summary: |
-    - United.com itinerary: $3,185 + 55,000 miles
+    - United.com itinerary: LHR > SFO > EWR > LHR, Fri Aug 22 - Thu Aug 28, $3,185 + 55,000 miles
       - LHR > SFO UA 939: dep LHR Fri Aug 22, 4:15 pm, arr SFO 7:10 pm (nonstop, 10h55m, Boeing 787-9 Dreamliner).
       - SFO > EWR UA 2259: dep SFO Tue Aug 26, 9:20 am, arr EWR 6:00 pm (nonstop, dur: ???, Boeing 787-9 Dreamliner).
       - EWR > LHR UA 14: dep EWR Thu Aug 28, 6:45 pm, arr LHR Fri 7:15 am (nonstop, 7h30m, Boeing 767-300).

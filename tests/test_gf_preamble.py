@@ -33,7 +33,7 @@ def test_price_and_trip_type_come_from_the_preamble():
 def test_rendered_header_carries_the_preamble_price():
     result = parser.parse_united_itinerary(
         _read("test-case-gf-selected-trip-input.txt"), reference_date=REF)
-    assert result.splitlines()[0] == "- Google Flights itinerary: £400 round trip."
+    assert result.splitlines()[0] == "- Google Flights itinerary: LHR <-> BIQ, Wed Aug 26 - Sun Aug 30, £400 round trip"
 
 
 def test_slice_price_still_wins_over_the_preamble():

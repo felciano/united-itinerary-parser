@@ -1,7 +1,7 @@
 - description: "Multi-leg reservation UI (PopClip format): 3 legs with 2 connections and a date change"
   input_text_block_file: "test-case-6-popclip-input.txt"
   expected_summary: |
-    - United.com itinerary: $3,248 + 62,500 miles
+    - United.com itinerary: LHR > PUJ > SFO > LHR, Sat Apr 25 - Sun May 3, $3,248 + 62,500 miles
       - LHR > EWR > PUJ UA 921/1514: dep LHR Sat Apr 25, 6:00 pm, arr EWR 9:20 pm, layover 10h51m, dep EWR Sun Apr 26, 8:11 am, arr PUJ 12:15 pm (1 stop, 23h15m incl 10h51m layover, Boeing 767-300/Boeing 737 MAX 9).
       - PUJ > EWR > SFO UA 1526/2115: dep PUJ Thu Apr 30, 4:19 pm, arr EWR 8:31 pm, layover 9h29m, dep EWR Fri May 1, 6:00 am, arr SFO 9:30 am (1 stop, 20h11m incl 9h29m layover, Boeing 737 MAX 9/Boeing 757-200).
       - SFO > LHR UA 901: dep SFO Sun May 3, 12:50 pm, arr LHR Mon 7:25 am (nonstop, 10h35m, Boeing 787-9 Dreamliner).

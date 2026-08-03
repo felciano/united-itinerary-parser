@@ -56,4 +56,4 @@ def test_end_to_end_dispatch_to_google_flights():
     from datetime import date
     text = _read("test-case-gf-5-input.txt")
     result = parser.parse_united_itinerary(text, reference_date=date(2026, 8, 2))
-    assert result.startswith("- Google Flights itinerary: £1,387 round trip.")
+    assert result.startswith("- Google Flights itinerary: STN > HND, Wed Aug 26, £1,387 round trip")

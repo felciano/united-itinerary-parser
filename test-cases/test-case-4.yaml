@@ -54,7 +54,7 @@
 
     $2,740.00
   expected_summary: |
-    - United.com itinerary: $2,740
+    - United.com itinerary: LHR > SFO > ORD > LHR, Tue Sep 3 - Tue Sep 10, $2,740
       - LHR > SFO UA 123: dep LHR Tue Sep 3, 8:00 am, arr SFO 11:15 am (nonstop, dur/aircraft: ???).
       - SFO > ORD UA 456: dep SFO Fri Sep 6, 10:00 am, arr ORD 4:00 pm (nonstop, 4h0m, Boeing 737-800).
       - ORD > LHR UA 789: dep ORD Tue Sep 10, 9:45 pm, arr LHR Wed 11:10 am (nonstop, 7h25m, Boeing 777-300ER).

@@ -1,7 +1,7 @@
 - description: "Google Flights: one stop, single airline (LHR > BIQ via GVA)"
   input_text_block_file: "test-case-gf-1-input.txt"
   expected_summary: |
-    - Google Flights itinerary: £301 round trip.
+    - Google Flights itinerary: LHR > BIQ, Wed Aug 26, £301 round trip
       - Heathrow (LHR) to Biarritz (BIQ) (via Geneva (GVA)):
         - LHR > GVA LX 355: dep LHR Wed Aug 26, 2:25 pm, arr GVA 5:05 pm (Economy, Airbus A220-300).
         - GVA > BIQ LX 2332: dep GVA Wed Aug 26, 6:30 pm, arr BIQ 7:50 pm (Economy, Airbus A220-300).
