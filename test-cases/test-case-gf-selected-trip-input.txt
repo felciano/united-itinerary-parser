@@ -1,0 +1,56 @@
+London
+Biarritz
+Round tripEconomy
+£400
+Lowest total price
+Selected flights
+Track prices
+
+
+Departing flight
+Wed, Aug 26
+171 kg CO2e
++82% emissions
+2:25 PMHeathrow Airport (LHR)
+Travel time: 1 hr 40 min
+5:05 PMGeneva Airport (GVA)
+SWISS
+Economy
+Airbus A220-300 PassengerLX 355
+Below average legroom (29 in)
+Emissions estimate: 88 kg CO2e
+Contrail warming potential: Medium
+1 hr 25 min layoverGeneva (GVA)
+6:30 PMGeneva Airport (GVA)
+Travel time: 1 hr 20 min
+7:50 PMBiarritz Airport (BIQ)
+SWISS
+Economy
+Airbus A220-300 PassengerLX 2332
+Below average legroom (29 in)
+Emissions estimate: 83 kg CO2e
+Contrail warming potential: Medium
+
+Returning flight
+Sun, Aug 30
+170 kg CO2e
++85% emissions
+8:45 AMBiarritz Airport (BIQ)
+Travel time: 1 hr 20 min
+10:05 AMGeneva Airport (GVA)
+SWISS
+Economy
+Airbus A220-300 PassengerLX 2333
+Below average legroom (29 in)
+Emissions estimate: 84 kg CO2e
+Contrail warming potential: Low
+2 hr 50 min layoverGeneva (GVA)
+12:55 PMGeneva Airport (GVA)
+Travel time: 1 hr 45 min
+1:40 PMHeathrow Airport (LHR)
+SWISS
+Economy
+Airbus A220-300 PassengerLX 354
+Below average legroom (29 in)
+Emissions estimate: 86 kg CO2e
+Contrail warming potential: Low

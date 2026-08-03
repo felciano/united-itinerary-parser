@@ -170,6 +170,12 @@ _GF_SLICE_HEADER_PHRASES = (
 )
 _GF_CABINS = ("Premium economy", "Economy", "Business", "First")
 _GF_SLICE_DATE = re.compile(r"^([A-Z][a-z]{2}),\s*([A-Z][a-z]{2})\s+(\d{1,2})$")
+# Same shape without the end anchor, for a date the capture left glued to the
+# row behind it. Splitting there is not possible without guessing: in
+# "Wed, Aug 26171 kg CO2e" nothing marks where day 26 ends and 171 kg begins.
+_GF_SLICE_DATE_LOOSE = re.compile(
+    r"^([A-Z][a-z]{2}),\s*([A-Z][a-z]{2})\s+(\d{1,2})"
+)
 _GF_PRICE = re.compile(r"^(\D{1,3}?)\s*([\d,]+(?:\.\d{2})?)$")
 _GF_TIME_AIRPORT = re.compile(
     r"^(\d{1,2}):(\d{2})\s*([AP]M)(?:\+(\d+))?(.+?)\s*\(([A-Z]{3})\)$"
@@ -262,6 +268,9 @@ def _normalize_gf_flattened(text):
     text = re.sub(r"(\d{1,2}:\d{2}\s*[AP]M)", r"\n\1", text)
     for pattern in _GF_FLAT_ROW_STARTS:
         text = re.sub(pattern, "\n", text)
+    # a price row ends at its amount; the selected-trip view runs the fare
+    # straight into the label that follows it
+    text = re.sub(r"([£$€¥₹₩]\s?[\d,]+(?:\.\d{2})?)(?![\d,])", r"\1\n", text)
     # a time+airport row ends at its IATA code
     text = re.sub(r"(\([A-Z]{3}\))(?!\n)", r"\1\n", text)
     # an airline row ends at its flight designator; trailing amenity text
@@ -310,16 +319,26 @@ def _parse_gf_slices(text):
 def _gf_slice_base_date(block, not_before):
     """Read the slice's date line and resolve its year forward."""
     for line in block.splitlines():
-        match = _GF_SLICE_DATE.match(line.strip())
+        stripped = line.strip()
+        # The strict whole-line form first; the loose prefix form catches a
+        # date left glued to the emissions row behind it, as happens when the
+        # accessibility capture drops the break between them.
+        match = _GF_SLICE_DATE.match(stripped) or _GF_SLICE_DATE_LOOSE.match(
+            stripped)
         if not match:
             continue
         weekday, month_abbr, day = match.groups()
         month = _MONTH_ABBR.get(month_abbr)
         if month is None:
             return None
-        year = _infer_year(month, int(day), weekday, not_before)
+        day = int(day)
+        if day > 31:
+            # the greedy two-digit read swallowed the first digit of whatever
+            # followed the date, so fall back to a single-digit day
+            day //= 10
+        year = _infer_year(month, day, weekday, not_before)
         try:
-            return date(year, month, int(day))
+            return date(year, month, day)
         except ValueError:
             return None
     return None
@@ -352,6 +371,36 @@ def _gf_slice_trip_type(block):
         if line in _GF_TRIP_TYPES:
             return line
     return None
+
+
+# The selected-trip view runs the trip type into the cabin, as
+# "Round tripEconomy", so anchoring on word boundaries would miss it. The
+# trailing guard stops a prefix of some longer lowercase word matching.
+#
+# The case-insensitivity is scoped to the alternation rather than applied to
+# the whole pattern: under a global re.I, "[a-z]" matches uppercase as well,
+# so the guard would reject the "E" of "Economy" and never match at all.
+_GF_TRIP_TYPE_RUN_ON = re.compile(r"((?i:round trip|one way))(?![a-z])")
+
+
+def _gf_preamble(text):
+    """The lines before the first slice header.
+
+    Search results start at the first slice, but the selected-trip view puts
+    the route, cabin and total fare above it — the only place that view states
+    a price at all.
+    """
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if _GF_SLICE_HEADER.match(line.strip()):
+            return "\n".join(lines[:index])
+    return ""
+
+
+def _gf_trip_type_anywhere(text):
+    """Return a normalized 'round trip' / 'one way' found in `text`, or None."""
+    match = _GF_TRIP_TYPE_RUN_ON.search(text)
+    return match.group(1).lower() if match else None
 
 
 def _parse_gf_segments(block, base_date, layover_cities):
@@ -409,6 +458,8 @@ def parse_google_flights(text, reference_date=None):
     Each Departure/Return slice becomes one Chunk. The price is taken from
     the last slice that states one: identical slices collapse to the same
     value, and differing slices resolve to the fully-selected combination.
+    Failing that it falls back to the preamble above the first slice, which
+    is where the selected-trip view puts the total fare.
     """
     reference = reference_date or date.today()
     text = _join_gf_flight_rows(_normalize_gf_flattened(text))
@@ -434,6 +485,16 @@ def parse_google_flights(text, reference_date=None):
         slice_trip_type = _gf_slice_trip_type(block)
         if slice_trip_type:
             trip_type = slice_trip_type
+
+    # Only consult the preamble for what the slices did not supply, so the
+    # search-results behaviour above is unchanged.
+    preamble = _gf_preamble(text)
+    if total_cost is None:
+        symbol, amount = _gf_slice_price(preamble)
+        if amount is not None:
+            currency, total_cost = symbol, amount
+    if trip_type is None:
+        trip_type = _gf_trip_type_anywhere(preamble)
 
     return Itinerary(
         source="google_flights",
